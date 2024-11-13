@@ -6,24 +6,13 @@ export interface Product extends Document {
   name: string;
   price: number;
   img: string;
-  statusPro: boolean;
-  desPro: string;
-  createdDatePro: Date;
-  quantity: number;
-  brand: string;
   category: mongoose.Schema.Types.ObjectId;
 }
 
 const ProductSchema: Schema = new Schema({
-  _id: { type: Number, required: true },
   name: { type: String, required: true },
   price: { type: Number, required: true },
-  img: { type: String, required: true },
-  statusPro: { type: Boolean, required: true },
-  desPro: { type: String, required: true },
-  createdDatePro: { type: Date, default: Date.now },
-  quantity: { type: Number, required: true },
-  brand: { type: String, required: true },
+  img: { type: String, required: false },
   category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
 });
 
