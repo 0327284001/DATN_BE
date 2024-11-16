@@ -25,7 +25,7 @@ const JWT_SECRET = process.env.JWT_SECRET as string;
 
 mongoose
   .connect(
-    "mongodb+srv://hoalacanh2508:FnXN4Z9PhHQdRbcv@cluster0.x6cjq.mongodb.net/DATN_ToyStoryShop",
+    "mongodb://localhost:27017",
     {
       //   useNewUrlParser: true,
       //   useUnifiedTopology: true,
