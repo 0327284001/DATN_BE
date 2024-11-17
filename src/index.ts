@@ -1,16 +1,13 @@
-// src/index.ts
 import express, { Request, Response } from "express";
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import User from "./user";
 import Product from "./product";
-// import upload from "./upload";
 import { Uploadfile } from "./upload";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import category from "./danhmuc";
-import user from "./user";
 var cors = require("cors");
 const fs = require("fs");
 const asyncHandler = require("express-async-handler");
@@ -23,21 +20,23 @@ const {
 } = require("./utils/Cloudinary");
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
+// Kết nối MongoDB
 mongoose
-  .connect(
-    "mongodb://localhost:27017",
-    {
-      //   useNewUrlParser: true,
-      //   useUnifiedTopology: true,
-    }
-  )
-  .then(() => console.log("DB connection successful"))
-  .catch((err) => console.log(err));
+  .connect("mongodb://localhost:27017", {
+    // useNewUrlParser: true,
+    // useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log("Kết nối DB thành công");
+  })
+  .catch((err) => {
+    console.log("Lỗi kết nối DB:", err);
+  });
 
 app.use(cors()); // Enable CORS for all routes
 app.use(bodyParser.json());
 
-// Endpoint GET: Lấy tất cả
+// Endpoint GET: Lấy tất cả người dùng
 app.get("/users", async (req: Request, res: Response) => {
   try {
     const users = await User.find();
@@ -48,6 +47,7 @@ app.get("/users", async (req: Request, res: Response) => {
   }
 });
 
+// Đăng nhập
 app.post("/login", async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -56,8 +56,6 @@ app.post("/login", async (req: Request, res: Response) => {
       return res.status(404).json({ message: "User not found" });
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    console.log(user);
-
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid password" });
     }
@@ -75,6 +73,7 @@ app.post("/login", async (req: Request, res: Response) => {
   }
 });
 
+// Lấy thông tin sản phẩm
 app.get("/product", async (req: Request, res: Response) => {
   try {
     const products = await Product.find().populate("category", "name");
@@ -85,6 +84,7 @@ app.get("/product", async (req: Request, res: Response) => {
   }
 });
 
+// Lấy danh mục
 app.get("/category", async (req: Request, res: Response) => {
   try {
     const categories = await category.find();
@@ -95,6 +95,7 @@ app.get("/category", async (req: Request, res: Response) => {
   }
 });
 
+// Lấy thông tin sản phẩm theo ID
 app.get("/product/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -106,6 +107,7 @@ app.get("/product/:id", async (req: Request, res: Response) => {
   }
 });
 
+// Lấy thông tin danh mục theo ID
 app.get("/category/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -113,10 +115,11 @@ app.get("/category/:id", async (req: Request, res: Response) => {
     res.json(Category);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Lỗi khi lấy thông tin danh muc" });
+    res.status(500).json({ message: "Lỗi khi lấy thông tin danh mục" });
   }
 });
 
+// Cập nhật danh mục
 app.put("/updatecategory/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -126,11 +129,11 @@ app.put("/updatecategory/:id", async (req: Request, res: Response) => {
     res.json(updateCategory);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Lỗi khi cập nhật Danh mục" });
+    res.status(500).json({ message: "Lỗi khi cập nhật danh mục" });
   }
 });
 
-// Endpoint POST: Tạo mới
+// Tạo mới người dùng
 app.post("/register", async (req: Request, res: Response) => {
   try {
     const { name, email, password } = req.body;
@@ -148,18 +151,11 @@ app.post("/register", async (req: Request, res: Response) => {
   }
 });
 
+// Thêm sản phẩm mới
 app.post("/product/add", async (req: Request, res: Response) => {
   try {
     const { name, price, img, categoryID } = req.body;
-    console.log(categoryID);
-  
-    // console.log("Request Body:", req.body);
-
     const Category = await category.findById(categoryID);
-    // console.log("Found Category:", category);
-
-    
-
     if (!Category) {
       return res.status(404).json({ message: "Không tìm thấy danh mục" });
     }
@@ -172,25 +168,27 @@ app.post("/product/add", async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Lỗi thêm mới" });
+    res.status(500).json({ message: "Lỗi thêm mới sản phẩm" });
   }
 });
 
+// Thêm danh mục mới
 app.post("/addcategory", async (req: Request, res: Response) => {
   try {
     const newCategory = new category(req.body);
     await newCategory.save();
     res.status(201).json({
-      message: "Thêm Category thành công",
+      message: "Thêm danh mục thành công",
       category: newCategory,
       status: 200,
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Lỗi thêm mới Category" });
+    res.status(500).json({ message: "Lỗi khi thêm mới danh mục" });
   }
 });
 
+// Upload hình ảnh
 app.post(
   "/upload",
   uploadPhoto.array("images", 10),
@@ -202,15 +200,11 @@ app.post(
       for (const file of files) {
         const { path } = file;
         const newpath = await uploader(path);
-        
         urls.push(newpath);
         fs.unlinkSync(path);
       }
-      const images = urls.map((file) => {
-        return file;
-      });
       res.status(201).json({
-        payload: images,
+        payload: urls,
         status: 200,
       });
     } catch (error: any) {
@@ -219,7 +213,7 @@ app.post(
   }
 );
 
-// Endpoint PUT: Cập nhật thông tin của một người dùng
+// Cập nhật thông tin người dùng
 app.put("/user/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -233,6 +227,7 @@ app.put("/user/:id", async (req: Request, res: Response) => {
   }
 });
 
+// Cập nhật sản phẩm
 app.put("/update/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -246,7 +241,7 @@ app.put("/update/:id", async (req: Request, res: Response) => {
   }
 });
 
-// Endpoint DELETE
+// Xóa người dùng
 app.delete("/user/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -258,61 +253,38 @@ app.delete("/user/:id", async (req: Request, res: Response) => {
   }
 });
 
+// Xóa danh mục
 app.delete("/category/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const del = await category.findByIdAndDelete(id);
-   
+    await category.findByIdAndDelete(id);
     res.json({
-      message: "danh mục đã được xóa thành công",
+      message: "Danh mục đã được xóa thành công",
       id: id,
-      test: del,
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "lỗi khi xóa danh mục" });
+    res.status(500).json({ message: "Lỗi khi xóa danh mục" });
   }
 });
 
+// Xóa sản phẩm
 app.delete("/product/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const test = await Product.findByIdAndDelete(id);
-   
+    await Product.findByIdAndDelete(id);
     res.json({
       message: "Sản phẩm đã được xóa thành công",
       id: id,
-      test: test,
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "lỗi khi xóa sản phẩm" });
+    res.status(500).json({ message: "Lỗi khi xóa sản phẩm" });
   }
 });
-
-
-
-
-
-
-
-app.get("/user/:userId", async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    res.json(user);
-  } catch (error) {
-    console.error("Get user error:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
 
 
 
 app.listen(PORT, () => {
-  console.log(`Server đang lắng nghe tại cổng ${PORT}`);
+  console.log("Server is running on port " + PORT);
 });
