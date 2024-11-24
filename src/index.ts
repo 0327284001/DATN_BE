@@ -82,7 +82,7 @@ app.post("/login", async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error logging in" });
   }
 });
-// service/products.ts
+
 
 
 // Lấy thông tin sản phẩm
@@ -93,6 +93,20 @@ app.get("/product", async (req: Request, res: Response) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Lỗi khi lấy thông tin sản phẩm" });
+  }
+});
+// Lấy thông tin sản phẩm chi tiết theo ID
+app.get("/product/details/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id).populate("cateId").exec(); // Nếu muốn populate các trường liên quan đến danh mục
+    if (!product) {
+      return res.status(404).json({ message: "Sản phẩm không tồn tại" });
+    }
+    res.json(product);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Lỗi khi lấy thông tin chi tiết sản phẩm" });
   }
 });
 // Lấy danh mục
@@ -267,16 +281,15 @@ app.put("/user/:id", async (req: Request, res: Response) => {
 // Cập nhật sản phẩm
 app.put("/update/:id", async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const updateProduct = await Product.findByIdAndUpdate(id, req.body, {
-      new: true,
-    });
+    const { id } = req.params;  // Lấy id từ params
+    const updateProduct = await Product.findByIdAndUpdate(id, req.body, { new: true });
     res.json(updateProduct);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Lỗi khi cập nhật sản phẩm" });
   }
 });
+
 
 // Xóa người dùng
 app.delete("/user/:id", async (req: Request, res: Response) => {
