@@ -14,6 +14,7 @@ const asyncHandler = require("express-async-handler");
 const app = express();
 const { uploadPhoto } = require("./middleware/uploadImage.js");
 const PORT = process.env.PORT || 28017;
+
 const {
   cloudinaryUploadImg,
   cloudinaryDeleteImg,
@@ -22,7 +23,7 @@ const JWT_SECRET = process.env.JWT_SECRET as string;
 
 // Kết nối MongoDB
 mongoose
-  .connect("mongodb://localhost:27017", {
+  .connect("mongodb+srv://hoalacanh2508:FnXN4Z9PhHQdRbcv@cluster0.x6cjq.mongodb.net/DATN_ToyStoryShop", {
     // useNewUrlParser: true,
     // useUnifiedTopology: true,
   })
@@ -76,14 +77,13 @@ app.post("/login", async (req: Request, res: Response) => {
 // Lấy thông tin sản phẩm
 app.get("/product", async (req: Request, res: Response) => {
   try {
-    const products = await Product.find().populate("category", "name");
+    const products = await Product.find();
     res.json(products);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Lỗi khi lấy thông tin sản phẩm" });
   }
 });
-
 // Lấy danh mục
 app.get("/category", async (req: Request, res: Response) => {
   try {
@@ -94,19 +94,17 @@ app.get("/category", async (req: Request, res: Response) => {
     res.status(500).json({ message: "Lỗi khi lấy thông tin danh mục" });
   }
 });
-
 // Lấy thông tin sản phẩm theo ID
 app.get("/product/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const product = await Product.findById(id).populate("category", "name");
+    const product = await Product.findById(id);
     res.json(product);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Lỗi khi lấy thông tin sản phẩm" });
   }
 });
-
 // Lấy thông tin danh mục theo ID
 app.get("/category/:id", async (req: Request, res: Response) => {
   try {
@@ -154,12 +152,8 @@ app.post("/register", async (req: Request, res: Response) => {
 // Thêm sản phẩm mới
 app.post("/product/add", async (req: Request, res: Response) => {
   try {
-    const { name, price, img, categoryID } = req.body;
-    const Category = await category.findById(categoryID);
-    if (!Category) {
-      return res.status(404).json({ message: "Không tìm thấy danh mục" });
-    }
-    const newProduct = new Product({ name, price, img, category: categoryID });
+    const { owerId, statusPro, price, desPro, creatDatePro, quantity, listPro, imgPro, namePro, cateId, brand } = req.body;
+    const newProduct = new Product({owerId, statusPro, price, desPro, creatDatePro, quantity, listPro, imgPro, namePro, cateId, brand });
     await newProduct.save();
     res.status(201).json({
       message: "Thêm sản phẩm thành công",
@@ -168,10 +162,9 @@ app.post("/product/add", async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Lỗi thêm mới sản phẩm" });
+    res.status(500).json({ message: "Lỗi thêm mới" });
   }
 });
-
 // Thêm danh mục mới
 app.post("/addcategory", async (req: Request, res: Response) => {
   try {
@@ -272,17 +265,18 @@ app.delete("/category/:id", async (req: Request, res: Response) => {
 app.delete("/product/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await Product.findByIdAndDelete(id);
+    const test = await Product.findByIdAndDelete(id);
+   
     res.json({
       message: "Sản phẩm đã được xóa thành công",
       id: id,
+      test: test,
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Lỗi khi xóa sản phẩm" });
+    res.status(500).json({ message: "lỗi khi xóa sản phẩm" });
   }
 });
-
 
 
 app.listen(PORT, () => {
