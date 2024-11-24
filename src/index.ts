@@ -21,6 +21,15 @@ const {
 } = require("./utils/Cloudinary");
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
+// Mở rộng kiểu cho Express Request
+declare global {
+  namespace Express {
+    interface Request {
+      user?: { id: string };
+    }
+  }
+}
+
 // Kết nối MongoDB
 mongoose
   .connect("mongodb+srv://hoalacanh2508:FnXN4Z9PhHQdRbcv@cluster0.x6cjq.mongodb.net/DATN_ToyStoryShop", {
@@ -74,15 +83,24 @@ app.post("/login", async (req: Request, res: Response) => {
   }
 });
 // service/products.ts
-export const getAllproducts = async () => {
+export const getAllProducts = async () => {
   try {
     const response = await fetch("/api/products"); // Endpoint của API
-    return await response.json(); // Đảm bảo API trả về tất cả các trường của Product
+
+    // Kiểm tra mã trạng thái HTTP
+    if (!response.ok) {
+      throw new Error(`Lỗi HTTP! Mã trạng thái: ${response.status}`);
+    }
+
+    const data = await response.json(); // Đảm bảo API trả về dữ liệu dưới dạng JSON
+    return data; // Trả về dữ liệu sản phẩm
   } catch (error) {
-    console.error("Error fetching products:", error);
+    console.error("Lỗi khi lấy dữ liệu sản phẩm:", error);
+    // Trả về mảng rỗng hoặc thông báo lỗi tùy theo yêu cầu của bạn
     return [];
   }
 };
+
 
 // Lấy thông tin sản phẩm
 app.get("/product", async (req: Request, res: Response) => {
@@ -162,19 +180,52 @@ app.post("/register", async (req: Request, res: Response) => {
 // Thêm sản phẩm mới
 app.post("/product/add", async (req: Request, res: Response) => {
   try {
-    const { owerId, statusPro, price, desPro, creatDatePro, quantity, listPro, imgPro, namePro, cateId, brand } = req.body;
-    const newProduct = new Product({owerId, statusPro, price, desPro, creatDatePro, quantity, listPro, imgPro, namePro, cateId, brand });
+    // Log dữ liệu nhận được
+    console.log("Request Body:", req.body);
+
+    const { statusPro, price, desPro, creatDatePro, quantity, listPro, imgPro, namePro, cateId, brand } = req.body;
+    const owerId = req.body.owerId || req.user?.id;
+
+    if (!owerId) {
+      return res.status(400).json({
+        message: "owerId là bắt buộc",
+        status: 400,
+      });
+    }
+
+    // Tạo sản phẩm mới
+    const newProduct = new Product({
+      owerId,
+      statusPro,
+      price,
+      desPro,
+      creatDatePro,
+      quantity,
+      listPro,
+      imgPro,
+      namePro,
+      cateId,
+      brand
+    });
+
+    // Lưu sản phẩm vào cơ sở dữ liệu
     await newProduct.save();
+
     res.status(201).json({
       message: "Thêm sản phẩm thành công",
       product: newProduct,
       status: 200,
     });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Lỗi thêm mới" });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ message: "Lỗi thêm mới", error: error.message });
+    } else {
+      res.status(500).json({ message: "Lỗi không xác định" });
+    }
   }
 });
+
+
 // Thêm danh mục mới
 app.post("/addcategory", async (req: Request, res: Response) => {
   try {
