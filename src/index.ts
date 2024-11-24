@@ -83,23 +83,6 @@ app.post("/login", async (req: Request, res: Response) => {
   }
 });
 // service/products.ts
-export const getAllProducts = async () => {
-  try {
-    const response = await fetch("/api/products"); // Endpoint của API
-
-    // Kiểm tra mã trạng thái HTTP
-    if (!response.ok) {
-      throw new Error(`Lỗi HTTP! Mã trạng thái: ${response.status}`);
-    }
-
-    const data = await response.json(); // Đảm bảo API trả về dữ liệu dưới dạng JSON
-    return data; // Trả về dữ liệu sản phẩm
-  } catch (error) {
-    console.error("Lỗi khi lấy dữ liệu sản phẩm:", error);
-    // Trả về mảng rỗng hoặc thông báo lỗi tùy theo yêu cầu của bạn
-    return [];
-  }
-};
 
 
 // Lấy thông tin sản phẩm
