@@ -73,6 +73,16 @@ app.post("/login", async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error logging in" });
   }
 });
+// service/products.ts
+export const getAllproducts = async () => {
+  try {
+    const response = await fetch("/api/products"); // Endpoint của API
+    return await response.json(); // Đảm bảo API trả về tất cả các trường của Product
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return [];
+  }
+};
 
 // Lấy thông tin sản phẩm
 app.get("/product", async (req: Request, res: Response) => {
