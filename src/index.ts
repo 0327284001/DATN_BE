@@ -99,7 +99,8 @@ app.get("/product", async (req: Request, res: Response) => {
 app.get("/product/details/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const product = await Product.findById(id).populate("cateId").exec(); // Nếu muốn populate các trường liên quan đến danh mục
+    console.log("Requested Product ID:", id);  // Log ID nhận được từ frontend
+    const product = await Product.findById(id).populate("cateId").exec();
     if (!product) {
       return res.status(404).json({ message: "Sản phẩm không tồn tại" });
     }
@@ -109,6 +110,7 @@ app.get("/product/details/:id", async (req: Request, res: Response) => {
     res.status(500).json({ message: "Lỗi khi lấy thông tin chi tiết sản phẩm" });
   }
 });
+
 // Lấy danh mục
 app.get("/category", async (req: Request, res: Response) => {
   try {

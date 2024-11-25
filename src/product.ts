@@ -10,7 +10,7 @@ const ProductSchema = new mongoose.Schema({
   brand: { type: String, required: true },
   statusPro: { type: Boolean, required: true },
   listPro: { type: String, required: true },
-  imgPro: { type: [String], default: null }, // Đây là một mảng chứa URL của hình ảnh
+  imgPro: { type: [String], maxlength: 255 }, // Đây là một mảng chứa URL của hình ảnh
   owerId: { type: String, required: true }  // Owner ID
 });
 
