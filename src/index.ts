@@ -337,6 +337,235 @@ app.delete("/product/:id", async (req: Request, res: Response) => {
   }
 });
 
+//
+
+// API: Lấy tổng doanh thu của tất cả sản phẩm
+app.get("/revenue/total", async (req: Request, res: Response) => {
+  try {
+    // Tính tổng doanh thu từ tất cả sản phẩm
+    // Doanh thu = price * quantitySold
+    const products = await Product.find();
+    const totalRevenue = products.reduce((sum, product) => {
+      const revenue = product.price * (product.quantitySold || 0); // quantitySold là trường dữ liệu mô tả số lượng đã bán
+      return sum + revenue;
+    }, 0);
+    
+    res.json({
+      message: "Tổng doanh thu",
+      totalRevenue,
+      status: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi khi tính tổng doanh thu" });
+  }
+});
+
+// API: Lấy doanh thu chi tiết theo sản phẩm
+app.get("/revenue/product/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    // Tìm sản phẩm theo ID
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Sản phẩm không tồn tại" });
+    }
+
+    const revenue = product.price * (product.quantitySold || 0); // Tính doanh thu cho sản phẩm cụ thể
+
+    res.json({
+      message: `Doanh thu chi tiết cho sản phẩm ${product.namePro}`,
+      revenue,
+      product,
+      status: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi khi lấy doanh thu chi tiết" });
+  }
+});
+
+// API: Lấy doanh thu theo danh mục
+app.get("/revenue/category/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    // Lấy tất cả sản phẩm thuộc danh mục
+    const products = await Product.find({ cateId: id });
+
+    if (products.length === 0) {
+      return res.status(404).json({ message: "Không có sản phẩm trong danh mục này" });
+    }
+
+    // Tính tổng doanh thu cho danh mục
+    const categoryRevenue = products.reduce((sum, product) => {
+      const revenue = product.price * (product.quantitySold || 0);
+      return sum + revenue;
+    }, 0);
+
+    res.json({
+      message: "Doanh thu theo danh mục",
+      categoryRevenue,
+      categoryId: id,
+      status: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi khi tính doanh thu theo danh mục" });
+  }
+});
+
+// API: Lấy danh sách sản phẩm bán chạy nhất (top N sản phẩm)
+app.get("/revenue/top-products/:top", async (req: Request, res: Response) => {
+  try {
+    const { top } = req.params;
+    const topN = parseInt(top, 10);
+
+    // Lấy danh sách sản phẩm và sắp xếp theo số lượng bán giảm dần
+    const products = await Product.find().sort({ quantitySold: -1 }).limit(topN);
+
+    res.json({
+      message: `Top ${topN} sản phẩm bán chạy nhất`,
+      products,
+      status: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi khi lấy danh sách sản phẩm bán chạy" });
+  }
+});
+
+// API: Lấy doanh thu theo ngày
+app.get("/revenue/daily", async (req: Request, res: Response) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const products = await Product.find({
+      soldDate: { $gte: today, $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) },
+    });
+
+    const dailyRevenue = products.reduce((sum, product) => {
+      return sum + product.price * (product.quantitySold || 0);
+    }, 0);
+
+    res.json({
+      message: "Doanh thu hôm nay",
+      dailyRevenue,
+      status: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi khi tính doanh thu theo ngày" });
+  }
+});
+
+
+// API: Lấy doanh thu theo tuần
+app.get("/revenue/weekly", async (req: Request, res: Response) => {
+  try {
+    const now = new Date();
+    const firstDayOfWeek = new Date(
+      now.setDate(now.getDate() - now.getDay())
+    ); // Ngày đầu tuần (Chủ nhật)
+    firstDayOfWeek.setHours(0, 0, 0, 0);
+
+    const products = await Product.find({
+      soldDate: { $gte: firstDayOfWeek, $lt: new Date() },
+    });
+
+    const weeklyRevenue = products.reduce((sum, product) => {
+      return sum + product.price * (product.quantitySold || 0);
+    }, 0);
+
+    res.json({
+      message: "Doanh thu tuần này",
+      weeklyRevenue,
+      status: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi khi tính doanh thu theo tuần" });
+  }
+});
+
+
+// API: Lấy doanh thu theo tháng
+app.get("/revenue/monthly", async (req: Request, res: Response) => {
+  try {
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const products = await Product.find({
+      soldDate: { $gte: firstDayOfMonth, $lt: new Date() },
+    });
+
+    const monthlyRevenue = products.reduce((sum, product) => {
+      return sum + product.price * (product.quantitySold || 0);
+    }, 0);
+
+    res.json({
+      message: "Doanh thu tháng này",
+      monthlyRevenue,
+      status: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi khi tính doanh thu theo tháng" });
+  }
+});
+
+
+// API: Lấy doanh thu theo năm
+app.get("/revenue/yearly", async (req: Request, res: Response) => {
+  try {
+    const now = new Date();
+    const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
+
+    const products = await Product.find({
+      soldDate: { $gte: firstDayOfYear, $lt: new Date() },
+    });
+
+    const yearlyRevenue = products.reduce((sum, product) => {
+      return sum + product.price * (product.quantitySold || 0);
+    }, 0);
+
+    res.json({
+      message: "Doanh thu năm nay",
+      yearlyRevenue,
+      status: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi khi tính doanh thu theo năm" });
+  }
+});
+
+//Cập nhật khi bán sản phẩm
+app.post("/product/sell/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { quantitySold } = req.body;
+
+    const product = await Product.findByIdAndUpdate(
+      id,
+      {
+        $inc: { quantitySold },
+        soldDate: new Date(),
+      },
+      { new: true }
+    );
+
+    res.json({
+      message: "Cập nhật thông tin bán hàng thành công",
+      product,
+      status: 200,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi khi cập nhật sản phẩm đã bán" });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log("Server is running on port " + PORT);

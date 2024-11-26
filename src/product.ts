@@ -11,7 +11,9 @@ const ProductSchema = new mongoose.Schema({
   statusPro: { type: Boolean, required: true },
   listPro: { type: String, required: true },
   imgPro: { type: [String], maxlength: 255 }, // Đây là một mảng chứa URL của hình ảnh
-  owerId: { type: String, required: true }  // Owner ID
+  owerId: { type: String, required: true },  // Owner ID
+  quantitySold: { type: Number, default: 0 },
+  soldDate: { type: Date }, 
 });
 
 
