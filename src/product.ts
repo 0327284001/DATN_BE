@@ -14,6 +14,7 @@ const ProductSchema = new mongoose.Schema({
   owerId: { type: String, required: true },  // Owner ID
   quantitySold: { type: Number, default: 0 },
   soldDate: { type: Date }, 
+  import_price:{ type: Number, required: true },
 });
 
 
