@@ -8,7 +8,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import category from "./danhmuc";
-import Order from "./OrderModel"; 
+import Order from "./OrderModel";
+import Statistic from "./Statistic";
 var cors = require("cors");
 const fs = require("fs");
 const asyncHandler = require("express-async-handler");
@@ -327,7 +328,7 @@ app.delete("/product/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const test = await Product.findByIdAndDelete(id);
-   
+
     res.json({
       message: "Sản phẩm đã được xóa thành công",
       id: id,
@@ -400,6 +401,290 @@ app.put("/api/orders/:id/status", async (req: Request, res: Response) => {
 });
 
 //Thống kê doanh thu
+//API Thống kê theo ngày:
+app.get("/statistics/today", async (req, res) => {
+  try {
+    const today = new Date();
+    const startOfToday = new Date(today.setHours(0, 0, 0, 0)); // 00:00:00
+    const endOfToday = new Date(today.setHours(23, 59, 59, 999)); // 23:59:59
+
+    const stats = await Statistic.aggregate([
+      {
+        $match: {
+          purchaseDate: { $gte: startOfToday, $lte: endOfToday },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: { $multiply: ["$sellingPrice", "$quantity"] } },
+          totalCost: { $sum: { $multiply: ["$purchasePrice", "$quantity"] } },
+          totalQuantity: { $sum: "$quantity" },
+        },
+      },
+      {
+        $project: {
+          totalRevenue: 1,
+          totalCost: 1,
+          totalQuantity: 1,
+          totalProfit: { $subtract: ["$totalRevenue", "$totalCost"] },
+        },
+      },
+    ]);
+
+    res.json(stats);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// API Thống kê theo tuần
+app.get("/statistics/weekly", async (req, res) => {
+  try {
+    const { weekStart } = req.query;
+    const startOfWeek = new Date(String(weekStart)); // Chuyển đổi sang string nếu cần
+    const endOfWeek = new Date(String(weekStart));
+    endOfWeek.setDate(endOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    const stats = await Statistic.aggregate([
+      {
+        $match: {
+          purchaseDate: { $gte: startOfWeek, $lte: endOfWeek },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: { $multiply: ["$sellingPrice", "$quantity"] } },
+          totalCost: { $sum: { $multiply: ["$purchasePrice", "$quantity"] } },
+          totalQuantity: { $sum: "$quantity" },
+        },
+      },
+      {
+        $project: {
+          totalRevenue: 1,
+          totalCost: 1,
+          totalQuantity: 1,
+          totalProfit: { $subtract: ["$totalRevenue", "$totalCost"] },
+        },
+      },
+    ]);
+
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ message: err instanceof Error ? err.message : 'Unknown error' });
+  }
+});
+
+// API Thống kê theo tháng
+app.get("/statistics/monthly", async (req, res) => {
+  try {
+    const { year, month } = req.query;
+    const yearNum = Number(year);  // Chuyển year thành number
+    const monthNum = Number(month);  // Chuyển month thành number
+
+    // Kiểm tra nếu giá trị là NaN, gán giá trị mặc định
+    if (isNaN(yearNum) || isNaN(monthNum)) {
+      return res.status(400).json({ message: "Invalid year or month" });
+    }
+
+    const startOfMonth = new Date(yearNum, monthNum - 1, 1);
+    const endOfMonth = new Date(yearNum, monthNum, 0);
+    endOfMonth.setHours(23, 59, 59, 999);
+
+    const stats = await Statistic.aggregate([
+      {
+        $match: {
+          purchaseDate: { $gte: startOfMonth, $lte: endOfMonth },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: { $multiply: ["$sellingPrice", "$quantity"] } },
+          totalCost: { $sum: { $multiply: ["$purchasePrice", "$quantity"] } },
+          totalQuantity: { $sum: "$quantity" },
+        },
+      },
+      {
+        $project: {
+          totalRevenue: 1,
+          totalCost: 1,
+          totalQuantity: 1,
+          totalProfit: { $subtract: ["$totalRevenue", "$totalCost"] },
+        },
+      },
+    ]);
+
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ message: err instanceof Error ? err.message : 'Unknown error' });
+  }
+});
+
+// API Thống kê theo năm
+app.get("/statistics/yearly", async (req, res) => {
+  try {
+    const { year } = req.query;
+    const yearNum = Number(year);  // Chuyển year thành number
+
+    if (isNaN(yearNum)) {
+      return res.status(400).json({ message: "Invalid year" });
+    }
+
+    const startOfYear = new Date(yearNum, 0, 1);
+    const endOfYear = new Date(yearNum, 11, 31);
+    endOfYear.setHours(23, 59, 59, 999);
+
+    const stats = await Statistic.aggregate([
+      {
+        $match: {
+          purchaseDate: { $gte: startOfYear, $lte: endOfYear },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: { $multiply: ["$sellingPrice", "$quantity"] } },
+          totalCost: { $sum: { $multiply: ["$purchasePrice", "$quantity"] } },
+          totalQuantity: { $sum: "$quantity" },
+        },
+      },
+      {
+        $project: {
+          totalRevenue: 1,
+          totalCost: 1,
+          totalQuantity: 1,
+          totalProfit: { $subtract: ["$totalRevenue", "$totalCost"] },
+        },
+      },
+    ]);
+
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ message: err instanceof Error ? err.message : 'Unknown error' });
+  }
+});
+
+// API Thống kê hôm qua:
+app.get("/statistics/yesterday", async (req, res) => {
+  try {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1); // Trừ đi 1 ngày
+    const startOfYesterday = new Date(yesterday.setHours(0, 0, 0, 0)); // 00:00:00
+    const endOfYesterday = new Date(yesterday.setHours(23, 59, 59, 999)); // 23:59:59
+
+    const stats = await Statistic.aggregate([
+      {
+        $match: {
+          purchaseDate: { $gte: startOfYesterday, $lte: endOfYesterday },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: { $multiply: ["$sellingPrice", "$quantity"] } },
+          totalCost: { $sum: { $multiply: ["$purchasePrice", "$quantity"] } },
+          totalQuantity: { $sum: "$quantity" },
+        },
+      },
+      {
+        $project: {
+          totalRevenue: 1,
+          totalCost: 1,
+          totalQuantity: 1,
+          totalProfit: { $subtract: ["$totalRevenue", "$totalCost"] },
+        },
+      },
+    ]);
+
+    res.json(stats);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+///API Thống kê 1 tuần trước:
+app.get("/statistics/last-week", async (req, res) => {
+  try {
+    const today = new Date();
+    const lastWeekStart = new Date(today.setDate(today.getDate() - 7)); // Trừ đi 7 ngày
+    const startOfLastWeek = new Date(lastWeekStart.setHours(0, 0, 0, 0)); // 00:00:00
+    const endOfLastWeek = new Date(lastWeekStart.setHours(23, 59, 59, 999)); // 23:59:59
+
+    const stats = await Statistic.aggregate([
+      {
+        $match: {
+          purchaseDate: { $gte: startOfLastWeek, $lte: endOfLastWeek },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: { $multiply: ["$sellingPrice", "$quantity"] } },
+          totalCost: { $sum: { $multiply: ["$purchasePrice", "$quantity"] } },
+          totalQuantity: { $sum: "$quantity" },
+        },
+      },
+      {
+        $project: {
+          totalRevenue: 1,
+          totalCost: 1,
+          totalQuantity: 1,
+          totalProfit: { $subtract: ["$totalRevenue", "$totalCost"] },
+        },
+      },
+    ]);
+
+    res.json(stats);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+// API Thống kê 3 tháng trước:
+app.get("/statistics/last-three-months", async (req, res) => {
+  try {
+    const today = new Date();
+    today.setMonth(today.getMonth() - 3); // Trừ đi 3 tháng
+    const startOfThreeMonthsAgo = new Date(today.setDate(1)); // Ngày đầu tiên của 3 tháng trước
+    const endOfThreeMonthsAgo = new Date(today.setMonth(today.getMonth() + 3)); // Ngày đầu tiên của tháng hiện tại
+
+    endOfThreeMonthsAgo.setDate(endOfThreeMonthsAgo.getDate() - 1); // Chỉnh lại ngày cuối cùng của 3 tháng trước
+    endOfThreeMonthsAgo.setHours(23, 59, 59, 999); // 23:59:59
+
+    const stats = await Statistic.aggregate([
+      {
+        $match: {
+          purchaseDate: { $gte: startOfThreeMonthsAgo, $lte: endOfThreeMonthsAgo },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: { $multiply: ["$sellingPrice", "$quantity"] } },
+          totalCost: { $sum: { $multiply: ["$purchasePrice", "$quantity"] } },
+          totalQuantity: { $sum: "$quantity" },
+        },
+      },
+      {
+        $project: {
+          totalRevenue: 1,
+          totalCost: 1,
+          totalQuantity: 1,
+          totalProfit: { $subtract: ["$totalRevenue", "$totalCost"] },
+        },
+      },
+    ]);
+
+    res.json(stats);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 
 
