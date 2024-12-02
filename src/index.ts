@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import category from "./danhmuc";
+import Order from "./OrderModel"; 
 var cors = require("cors");
 const fs = require("fs");
 const asyncHandler = require("express-async-handler");
@@ -335,6 +336,66 @@ app.delete("/product/:id", async (req: Request, res: Response) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "lỗi khi xóa sản phẩm" });
+  }
+});
+
+
+//quản lí đơn hàng
+
+
+app.get("/orders", async (req: Request, res: Response) => {
+  try {
+    const orders = await Order.find(); // Lấy toàn bộ đơn hàng
+    res.json(orders);
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách đơn hàng:", error);
+    res.status(500).json({ message: "Lỗi server, không thể lấy danh sách đơn hàng" });
+  }
+});
+
+app.get("/api/orders/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params; // Lấy ID từ URL
+    const order = await Order.findById(id); // Tìm đơn hàng theo ID
+    if (!order) {
+      return res.status(404).json({ message: "Đơn hàng không tồn tại" });
+    }
+    res.json(order);
+  } catch (error) {
+    console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
+    res.status(500).json({ message: "Lỗi server, không thể lấy chi tiết đơn hàng" });
+  }
+});
+
+app.put("/api/orders/:id/status", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params; // Lấy ID đơn hàng từ URL
+    const { orderStatus } = req.body; // Lấy trạng thái mới từ body
+
+    // Kiểm tra trạng thái hợp lệ
+    const validStatuses = ["Chờ xác nhận", "Đã xác nhận", "Chờ giao hàng", "Đã giao"];
+    if (!validStatuses.includes(orderStatus)) {
+      return res.status(400).json({ message: "Trạng thái không hợp lệ" });
+    }
+
+    // Cập nhật trạng thái đơn hàng
+    const updatedOrder = await Order.findByIdAndUpdate(
+      id,
+      { orderStatus },
+      { new: true } // Trả về đơn hàng sau khi cập nhật
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: "Đơn hàng không tồn tại" });
+    }
+
+    res.json({
+      message: "Cập nhật trạng thái đơn hàng thành công",
+      order: updatedOrder,
+    });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái đơn hàng:", error);
+    res.status(500).json({ message: "Lỗi server, không thể cập nhật trạng thái đơn hàng" });
   }
 });
 
