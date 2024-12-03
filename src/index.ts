@@ -354,19 +354,7 @@ app.get("/orders", async (req: Request, res: Response) => {
   }
 });
 
-app.get("/api/orders/:id", async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params; // Lấy ID từ URL
-    const order = await Order.findById(id); // Tìm đơn hàng theo ID
-    if (!order) {
-      return res.status(404).json({ message: "Đơn hàng không tồn tại" });
-    }
-    res.json(order);
-  } catch (error) {
-    console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
-    res.status(500).json({ message: "Lỗi server, không thể lấy chi tiết đơn hàng" });
-  }
-});
+
 
 app.put("/orders/:id", async (req, res) => {
   const { id } = req.params;
@@ -385,6 +373,18 @@ app.put("/orders/:id", async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: "Lỗi cập nhật trạng thái", error });
+  }
+});
+
+app.get('/orders', async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate('prodDetails.prodId', 'namePro')  // Lấy tên sản phẩm từ Product
+      .exec();
+
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi lấy dữ liệu đơn hàng" });
   }
 });
 
