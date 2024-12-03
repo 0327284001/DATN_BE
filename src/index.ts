@@ -368,35 +368,23 @@ app.get("/api/orders/:id", async (req: Request, res: Response) => {
   }
 });
 
-app.put("/api/orders/:id/status", async (req: Request, res: Response) => {
+app.put("/orders/:id", async (req, res) => {
+  const { id } = req.params;
+  const { orderStatus } = req.body;
+
   try {
-    const { id } = req.params; // Lấy ID đơn hàng từ URL
-    const { orderStatus } = req.body; // Lấy trạng thái mới từ body
-
-    // Kiểm tra trạng thái hợp lệ
-    const validStatuses = ["Chờ xác nhận", "Đã xác nhận", "Chờ giao hàng", "Đã giao"];
-    if (!validStatuses.includes(orderStatus)) {
-      return res.status(400).json({ message: "Trạng thái không hợp lệ" });
-    }
-
-    // Cập nhật trạng thái đơn hàng
     const updatedOrder = await Order.findByIdAndUpdate(
       id,
       { orderStatus },
-      { new: true } // Trả về đơn hàng sau khi cập nhật
+      { new: true }
     );
-
-    if (!updatedOrder) {
-      return res.status(404).json({ message: "Đơn hàng không tồn tại" });
+    if (updatedOrder) {
+      res.status(200).json(updatedOrder);
+    } else {
+      res.status(404).json({ message: "Không tìm thấy đơn hàng" });
     }
-
-    res.json({
-      message: "Cập nhật trạng thái đơn hàng thành công",
-      order: updatedOrder,
-    });
   } catch (error) {
-    console.error("Lỗi khi cập nhật trạng thái đơn hàng:", error);
-    res.status(500).json({ message: "Lỗi server, không thể cập nhật trạng thái đơn hàng" });
+    res.status(500).json({ message: "Lỗi cập nhật trạng thái", error });
   }
 });
 
