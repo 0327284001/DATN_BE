@@ -9,7 +9,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import category from "./danhmuc";
 import Order from "./OrderModel";
-import Statistic from "./Statistic";
+import Statistic from "./statistic";
 var cors = require("cors");
 const fs = require("fs");
 const asyncHandler = require("express-async-handler");
@@ -401,6 +401,44 @@ app.put("/api/orders/:id/status", async (req: Request, res: Response) => {
 });
 
 //Thống kê doanh thu
+
+//Thêm mới dữ liệu thống kê
+app.post('/statistics/add', async (req, res) => {
+  try {
+      const { namePro, import_price, price, creatDatePro, quantity, profit } = req.body;
+
+      console.log("Dữ liệu nhận được:", req.body); // Kiểm tra dữ liệu
+
+      // Kiểm tra dữ liệu đầu vào
+      if (!namePro || !import_price || !price || !creatDatePro || !quantity || profit == null) {
+          return res.status(400).json({ message: "Tất cả các trường đều bắt buộc" });
+      }
+
+      // Tạo một bản ghi mới
+      const newStatistic = new Statistic({
+          namePro,
+          import_price,
+          price,
+          creatDatePro: new Date(creatDatePro), // Chuyển đổi sang định dạng Date
+          quantity,
+          profit,
+      });
+
+      // Lưu vào cơ sở dữ liệu
+      await newStatistic.save();
+      res.status(201).json({ message: "Thống kê đã được thêm thành công", data: newStatistic });
+  } catch (err: unknown) {
+      if (err instanceof Error) {
+          res.status(500).json({ message: err.message });
+      } else {
+          res.status(500).json({ message: "Đã xảy ra lỗi không xác định" });
+      }
+  }
+});
+
+
+
+
 //API Thống kê theo ngày:
 app.get("/statistics/today", async (req, res) => {
   try {
