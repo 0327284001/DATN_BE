@@ -346,13 +346,19 @@ app.delete("/product/:id", async (req: Request, res: Response) => {
 
 app.get("/orders", async (req: Request, res: Response) => {
   try {
-    const orders = await Order.find(); // Lấy toàn bộ đơn hàng
+    const orders = await Order.find()
+      .populate({
+        path: "prodDetails.prodId", // Đường dẫn tới bảng Product
+        select: "namePro", // Chỉ lấy trường namePro từ Product
+      });
+
     res.json(orders);
   } catch (error) {
     console.error("Lỗi khi lấy danh sách đơn hàng:", error);
     res.status(500).json({ message: "Lỗi server, không thể lấy danh sách đơn hàng" });
   }
 });
+
 
 
 
@@ -376,17 +382,7 @@ app.put("/orders/:id", async (req, res) => {
   }
 });
 
-app.get('/orders', async (req, res) => {
-  try {
-    const orders = await Order.find()
-      .populate('prodDetails.prodId', 'namePro')  // Lấy tên sản phẩm từ Product
-      .exec();
 
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ message: "Lỗi khi lấy dữ liệu đơn hàng" });
-  }
-});
 
 //Thống kê doanh thu
 
