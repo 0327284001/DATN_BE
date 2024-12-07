@@ -9,6 +9,9 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import category from "./danhmuc";
 import Order from "./OrderModel";
+import Chat from './ChatModel';
+import Voucher from './VoucherModel';
+
 import Statistic from "./Statistic";
 var cors = require("cors");
 const fs = require("fs");
@@ -48,6 +51,7 @@ mongoose
 app.use(cors()); // Enable CORS for all routes
 app.use(bodyParser.json());
 
+app.use(express.json()); 
 // Endpoint GET: Lấy tất cả người dùng
 app.get("/users", async (req: Request, res: Response) => {
   try {
@@ -386,6 +390,177 @@ app.put("/orders/:id", async (req, res) => {
 
 //Thống kê doanh thu
 
+
+//////
+
+
+//------------//
+
+// API để tạo tin nhắn mới (POST)
+
+app.post('/chats', async (req, res) => {
+  const { senderId, receiverId, message, chatType, chatStatus } = req.body;
+
+  try {
+    // Tạo một chat mới
+    const newChat = new Chat({
+      senderId,
+      receiverId,
+      message,
+      chatType,
+      chatStatus,
+    });
+
+    // Lưu tin nhắn vào cơ sở dữ liệu
+    const savedChat = await newChat.save();
+
+    // Trả về kết quả
+    res.status(201).json(savedChat);
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi khi gửi tin nhắn', error });
+  }
+});
+
+// API để lấy tất cả tin nhắn (GET)
+app.get("/chats", async (req, res) => {
+  try {
+    // Lấy tất cả tin nhắn từ cơ sở dữ liệu
+    const chats = await Chat.find();
+    // Trả về danh sách tin nhắn
+    res.status(200).json(chats);
+  } catch (error) {
+    // Nếu có lỗi, trả về lỗi
+    res.status(500).json({ message: "Lỗi lấy tin nhắn", error });
+  }
+});
+
+// API để lấy một tin nhắn theo ID (GET)
+app.get("/chats/:id", async (req, res) => {
+  try {
+    // Tìm tin nhắn theo ID
+    const chat = await Chat.findById(req.params.id);
+    if (!chat) {
+      // Nếu không tìm thấy tin nhắn, trả về lỗi 404
+      return res.status(404).json({ message: "Không tìm thấy tin nhắn" });
+    }
+    // Trả về tin nhắn tìm được
+    res.status(200).json(chat);
+  } catch (error) {
+    // Nếu có lỗi, trả về lỗi
+    res.status(500).json({ message: "Lỗi lấy tin nhắn", error });
+  }
+});
+
+// API để cập nhật tin nhắn theo ID (PUT)
+// app.put("/chats/:id", async (req, res) => {
+//   try {
+//     // Cập nhật tin nhắn theo ID, sử dụng dữ liệu mới từ request body
+//     const updatedChat = await Chat.findByIdAndUpdate(req.params.id, req.body, { new: true });
+//     if (updatedChat) {
+//       // Trả về tin nhắn đã được cập nhật
+//       res.status(200).json(updatedChat);
+//     } else {
+//       // Nếu không tìm thấy tin nhắn để cập nhật, trả về lỗi 404
+//       res.status(404).json({ message: "Không tìm thấy tin nhắn để cập nhật" });
+//     }
+//   } catch (error) {
+//     // Nếu có lỗi, trả về lỗi
+//     res.status(500).json({ message: "Lỗi cập nhật tin nhắn", error });
+//   }
+// });
+
+// API để xóa tin nhắn theo ID (DELETE)
+app.delete("/chats/:id", async (req, res) => {
+  try {
+    // Xóa tin nhắn theo ID
+    const deletedChat = await Chat.findByIdAndDelete(req.params.id);
+    if (deletedChat) {
+      // Trả về thông báo xóa thành công
+      res.status(200).json({ message: "Tin nhắn đã được xóa" });
+    } else {
+      // Nếu không tìm thấy tin nhắn để xóa, trả về lỗi 404
+      res.status(404).json({ message: "Không tìm thấy tin nhắn để xóa" });
+    }
+  } catch (error) {
+    // Nếu có lỗi, trả về lỗi
+    res.status(500).json({ message: "Lỗi xóa tin nhắn", error });
+  }
+});
+
+//--------------//
+//API lấy tất cả Voucher
+app.get("/vouchers", async (req, res) => {
+  try {
+    // Lấy tất cả voucher
+    const vouchers = await Voucher.find();
+    res.status(200).json(vouchers);
+  } catch (error) {
+    // Nếu có lỗi, trả về lỗi
+    res.status(500).json({ message: "Lỗi khi lấy danh sách voucher", error });
+  }
+});
+
+
+// API thêm Voucher
+app.post("/vouchers", async (req, res) => {
+  console.log("Received body:", req.body);
+
+  const { price_reduced, discount_code, quantity_voucher } = req.body;
+
+  if (!price_reduced || !discount_code || !quantity_voucher) {
+    return res.status(400).json({ message: "Thiếu thông tin cần thiết" });
+  }
+
+  const newVoucher = new Voucher({
+    price_reduced,
+    discount_code,
+    quantity_voucher,
+  });
+
+  try {
+    const savedVoucher = await newVoucher.save();
+    res.status(201).json(savedVoucher);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi thêm voucher", error });
+  }
+});
+
+//API sửa Voucher
+app.put("/vouchers/:id", async (req, res) => {
+  const { price_reduced, discount_code, quantity_voucher } = req.body;
+
+  try {
+    // Cập nhật voucher theo ID
+    const updatedVoucher = await Voucher.findByIdAndUpdate(
+      req.params.id,
+      { price_reduced, discount_code, quantity_voucher },
+      { new: true } // Trả về bản ghi đã được cập nhật
+    );
+
+    if (updatedVoucher) {
+      res.status(200).json(updatedVoucher);
+    } else {
+      res.status(404).json({ message: "Voucher không tồn tại" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi sửa voucher", error });
+  }
+});
+
+// API xóa Voucher
+app.delete("/vouchers/:id", async (req, res) => {
+  try {
+    // Xóa voucher theo ID
+    const deletedVoucher = await Voucher.findByIdAndDelete(req.params.id);
+    if (deletedVoucher) {
+      res.status(200).json({ message: "Voucher đã được xóa" });
+    } else {
+      res.status(404).json({ message: "Không tìm thấy voucher để xóa" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi xóa voucher", error });
+  }
+});
 
 
 app.listen(PORT, () => {
