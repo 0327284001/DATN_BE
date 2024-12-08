@@ -12,7 +12,7 @@ import Order from "./OrderModel";
 import Chat from './ChatModel';
 import Voucher from './VoucherModel';
 
-import Statistic from "./Statistic";
+// import Statistic from "./Statistic";
 var cors = require("cors");
 const fs = require("fs");
 const asyncHandler = require("express-async-handler");
@@ -51,7 +51,7 @@ mongoose
 app.use(cors()); // Enable CORS for all routes
 app.use(bodyParser.json());
 
-app.use(express.json()); 
+app.use(express.json());
 // Endpoint GET: Lấy tất cả người dùng
 app.get("/users", async (req: Request, res: Response) => {
   try {
@@ -514,16 +514,18 @@ app.post("/vouchers", async (req, res) => {
   const newVoucher = new Voucher({
     price_reduced,
     discount_code,
-    quantity_voucher,
+    quantity_voucher,  // Để nguyên kiểu chuỗi
   });
 
   try {
     const savedVoucher = await newVoucher.save();
     res.status(201).json(savedVoucher);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Lỗi khi thêm voucher", error });
   }
 });
+
 
 //API sửa Voucher
 app.put("/vouchers/:id", async (req, res) => {
