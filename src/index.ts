@@ -12,7 +12,7 @@ import Order from "./OrderModel";
 import Chat from './ChatModel';
 import Voucher from './VoucherModel';
 
-import Statistic from "./Statistic";
+// import Statistic from "./Statistic";
 var cors = require("cors");
 const fs = require("fs");
 const asyncHandler = require("express-async-handler");
@@ -50,9 +50,8 @@ mongoose
 
 app.use(cors()); // Enable CORS for all routes
 app.use(bodyParser.json());
+
 app.use(express.json()); 
-
-
 // Endpoint GET: Lấy tất cả người dùng
 app.get("/users", async (req: Request, res: Response) => {
   try {
@@ -518,30 +517,20 @@ app.post("/vouchers/add", async (req: Request, res: Response) => {
       });
     }
 
-    // Tạo voucher mới
-    const newVoucher = new Voucher({
-      price_reduced,
-      discount_code,
-      quantity_voucher
-    });
+  const newVoucher = new Voucher({
+    price_reduced,
+    discount_code,
+    quantity_voucher,
+  });
 
-    // Lưu voucher vào cơ sở dữ liệu
-    await newVoucher.save();
-
-    // Trả về kết quả thành công với id thay vì _id
-    res.status(201).json({
-      message: "Thêm voucher thành công",
-      voucher: newVoucher,  // Voucher sẽ chứa id thay vì _id
-      status: 200,
-    });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      res.status(500).json({ message: "Lỗi thêm voucher", error: error.message });
-    } else {
-      res.status(500).json({ message: "Lỗi không xác định" });
-    }
+  try {
+    const savedVoucher = await newVoucher.save();
+    res.status(201).json(savedVoucher);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi thêm voucher", error });
   }
 });
+
 
 //API sửa Voucher
 app.put("/vouchers/:id", async (req, res) => {
