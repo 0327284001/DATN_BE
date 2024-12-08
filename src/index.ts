@@ -50,8 +50,9 @@ mongoose
 
 app.use(cors()); // Enable CORS for all routes
 app.use(bodyParser.json());
-
 app.use(express.json()); 
+
+
 // Endpoint GET: Lấy tất cả người dùng
 app.get("/users", async (req: Request, res: Response) => {
   try {
@@ -502,26 +503,43 @@ app.get("/vouchers", async (req, res) => {
 
 
 // API thêm Voucher
-app.post("/vouchers", async (req, res) => {
-  console.log("Received body:", req.body);
-
-  const { price_reduced, discount_code, quantity_voucher } = req.body;
-
-  if (!price_reduced || !discount_code || !quantity_voucher) {
-    return res.status(400).json({ message: "Thiếu thông tin cần thiết" });
-  }
-
-  const newVoucher = new Voucher({
-    price_reduced,
-    discount_code,
-    quantity_voucher,
-  });
-
+app.post("/vouchers/add", async (req: Request, res: Response) => {
   try {
-    const savedVoucher = await newVoucher.save();
-    res.status(201).json(savedVoucher);
-  } catch (error) {
-    res.status(500).json({ message: "Lỗi khi thêm voucher", error });
+    // Log dữ liệu nhận được
+    console.log("Request Body:", req.body);
+
+    const { price_reduced, discount_code, quantity_voucher } = req.body;
+
+    // Kiểm tra các trường bắt buộc
+    if (!price_reduced || !discount_code || !quantity_voucher) {
+      return res.status(400).json({
+        message: "Thiếu thông tin cần thiết",
+        status: 400,
+      });
+    }
+
+    // Tạo voucher mới
+    const newVoucher = new Voucher({
+      price_reduced,
+      discount_code,
+      quantity_voucher
+    });
+
+    // Lưu voucher vào cơ sở dữ liệu
+    await newVoucher.save();
+
+    // Trả về kết quả thành công với id thay vì _id
+    res.status(201).json({
+      message: "Thêm voucher thành công",
+      voucher: newVoucher,  // Voucher sẽ chứa id thay vì _id
+      status: 200,
+    });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(500).json({ message: "Lỗi thêm voucher", error: error.message });
+    } else {
+      res.status(500).json({ message: "Lỗi không xác định" });
+    }
   }
 });
 
