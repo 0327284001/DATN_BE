@@ -502,34 +502,34 @@ app.get("/vouchers", async (req, res) => {
 
 
 // API thêm Voucher
-app.post("/vouchers/add", async (req: Request, res: Response) => {
-  try {
-    // Log dữ liệu nhận được
-    console.log("Request Body:", req.body);
+// app.post("/vouchers/add", async (req: Request, res: Response) => {
+//   try {
+//     // Log dữ liệu nhận được
+//     console.log("Request Body:", req.body);
 
-    const { price_reduced, discount_code, quantity_voucher } = req.body;
+//     const { price_reduced, discount_code, quantity_voucher } = req.body;
 
-    // Kiểm tra các trường bắt buộc
-    if (!price_reduced || !discount_code || !quantity_voucher) {
-      return res.status(400).json({
-        message: "Thiếu thông tin cần thiết",
-        status: 400,
-      });
-    }
+//     // Kiểm tra các trường bắt buộc
+//     if (!price_reduced || !discount_code || !quantity_voucher) {
+//       return res.status(400).json({
+//         message: "Thiếu thông tin cần thiết",
+//         status: 400,
+//       });
+//     }
 
-  const newVoucher = new Voucher({
-    price_reduced,
-    discount_code,
-    quantity_voucher,
-  });
+//   const newVoucher = new Voucher({
+//     price_reduced,
+//     discount_code,
+//     quantity_voucher,
+//   });
 
-  try {
-    const savedVoucher = await newVoucher.save();
-    res.status(201).json(savedVoucher);
-  } catch (error) {
-    res.status(500).json({ message: "Lỗi khi thêm voucher", error });
-  }
-});
+//   try {
+//     const savedVoucher = await newVoucher.save();
+//     res.status(201).json(savedVoucher);
+//   } catch (error) {
+//     res.status(500).json({ message: "Lỗi khi thêm voucher", error });
+//   }
+// });
 
 
 //API sửa Voucher
