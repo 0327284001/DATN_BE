@@ -514,10 +514,22 @@ app.get("/vouchers", async (req, res) => {
     res.status(500).json({ message: "Lỗi khi lấy danh sách voucher", error });
   }
 });
-
+// Api lấy theo id
+app.get('/vouchers/:id', (req, res) => {
+  const { id } = req.params;
+  // Lấy voucher từ cơ sở dữ liệu với ID
+  Voucher.findById(id)
+    .then(voucher => {
+      if (!voucher) {
+        return res.status(404).json({ message: 'Voucher không tồn tại' });
+      }
+      res.json(voucher);
+    })
+    .catch(error => res.status(500).json({ message: error.message }));
+});
 
 // API thêm Voucher
-app.post("/vouchers", async (req, res) => {
+app.post("/vouchers/add", async (req, res) => {
   try {
     // Lấy dữ liệu từ body của request
     const { price_reduced, discount_code, quantity_voucher } = req.body;
@@ -555,8 +567,6 @@ app.post("/vouchers", async (req, res) => {
 
 
 
-
-
 //API sửa Voucher
 app.put("/vouchers/:id", async (req, res) => {
   const { price_reduced, discount_code, quantity_voucher } = req.body;
@@ -564,7 +574,7 @@ app.put("/vouchers/:id", async (req, res) => {
   try {
     // Cập nhật voucher theo ID
     const updatedVoucher = await Voucher.findByIdAndUpdate(
-      req.params.id,
+      req.params.id,  // Đảm bảo sử dụng req.params.id thay vì req.params._id
       { price_reduced, discount_code, quantity_voucher },
       { new: true } // Trả về bản ghi đã được cập nhật
     );
