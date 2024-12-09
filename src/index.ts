@@ -51,7 +51,8 @@ mongoose
 app.use(cors()); // Enable CORS for all routes
 app.use(bodyParser.json());
 
-app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 // Endpoint GET: Lấy tất cả người dùng
 app.get("/users", async (req: Request, res: Response) => {
   try {
@@ -489,47 +490,71 @@ app.delete("/chats/:id", async (req, res) => {
 
 //--------------//
 //API lấy tất cả Voucher
+// app.get("/vouchers", async (req, res) => {
+//   try {
+//     // Lấy tất cả voucher
+//     const vouchers = await Voucher.find();
+//     res.status(200).json(vouchers);
+//   } catch (error) {
+//     // Nếu có lỗi, trả về lỗi
+//     res.status(500).json({ message: "Lỗi khi lấy danh sách voucher", error });
+//   }
+// });
 app.get("/vouchers", async (req, res) => {
   try {
-    // Lấy tất cả voucher
     const vouchers = await Voucher.find();
-    res.status(200).json(vouchers);
+    const normalizedVouchers = vouchers.map(voucher => ({
+      _id: voucher._id, // Giữ nguyên trường _id
+      price_reduced: voucher.price_reduced,
+      discount_code: voucher.discount_code,
+      quantity_voucher: voucher.quantity_voucher
+    }));
+    res.status(200).json(normalizedVouchers);
   } catch (error) {
-    // Nếu có lỗi, trả về lỗi
     res.status(500).json({ message: "Lỗi khi lấy danh sách voucher", error });
   }
 });
 
 
 // API thêm Voucher
-// app.post("/vouchers/add", async (req: Request, res: Response) => {
-//   try {
-//     // Log dữ liệu nhận được
-//     console.log("Request Body:", req.body);
+app.post("/vouchers", async (req, res) => {
+  try {
+    // Lấy dữ liệu từ body của request
+    const { price_reduced, discount_code, quantity_voucher } = req.body;
 
-//     const { price_reduced, discount_code, quantity_voucher } = req.body;
+    // Kiểm tra nếu các trường bắt buộc không được cung cấp
+    if (!price_reduced || !discount_code || !quantity_voucher) {
+      return res.status(400).json({ message: "Vui lòng cung cấp đầy đủ thông tin." });
+    }
 
-//     // Kiểm tra các trường bắt buộc
-//     if (!price_reduced || !discount_code || !quantity_voucher) {
-//       return res.status(400).json({
-//         message: "Thiếu thông tin cần thiết",
-//         status: 400,
-//       });
-//     }
+    // Tạo một voucher mới
+    const newVoucher = new Voucher({
+      price_reduced,
+      discount_code,
+      quantity_voucher
+    });
 
-//   const newVoucher = new Voucher({
-//     price_reduced,
-//     discount_code,
-//     quantity_voucher,
-//   });
+    // Lưu vào database
+    const savedVoucher = await newVoucher.save();
 
-//   try {
-//     const savedVoucher = await newVoucher.save();
-//     res.status(201).json(savedVoucher);
-//   } catch (error) {
-//     res.status(500).json({ message: "Lỗi khi thêm voucher", error });
-//   }
-// });
+    // Phản hồi thành công
+    res.status(201).json({
+      message: "Voucher đã được thêm thành công",
+      voucher: savedVoucher
+    });
+  } catch (error) {
+    // Bắt lỗi và phản hồi
+    if (error instanceof Error && 'code' in error) {
+      if (error.code === 11000) {
+        res.status(400).json({ message: "Mã giảm giá đã tồn tại." });
+        return;
+      }
+    }    
+  }
+});
+
+
+
 
 
 //API sửa Voucher
