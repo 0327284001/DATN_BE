@@ -2,14 +2,14 @@ import mongoose from 'mongoose';
 
 // Khai báo schema cho Chat
 const ChatSchema = new mongoose.Schema({
-    senderId: {
+    cusId: {
         type: String, // ID người gửi
         maxlength: 255,
         required: true,
     },
-    receiverId: {
-        type: String, // ID người nhận
-        maxlength: 255,
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User', // Liên kết tới bảng User
         required: true,
     },
     message: {
