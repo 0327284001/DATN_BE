@@ -12,6 +12,7 @@ import Order from "./OrderModel";
 import Chat from './ChatModel';
 import Voucher from './VoucherModel';
 import FeebackModel from "./FeebackModel";
+import ChatModel from "./ChatModel";
 
 // import Statistic from "./Statistic";
 var cors = require("cors");
@@ -400,121 +401,78 @@ app.put("/orders/:id", async (req, res) => {
 
 // API để tạo tin nhắn mới (POST)
 
-app.post('/chats', async (req, res) => {
-  const { senderId, receiverId, message, chatType, chatStatus } = req.body;
+app.get('/messages/:userId/:cusId', async (req, res) => {
+  const { userId, cusId } = req.params;
 
   try {
-    // Tạo một chat mới
-    const newChat = new Chat({
-      senderId,
-      receiverId,
-      message,
-      chatType,
-      chatStatus,
-    });
+    // Kiểm tra userId có hợp lệ không
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: 'userId không hợp lệ.' });
+    }
 
-    // Lưu tin nhắn vào cơ sở dữ liệu
-    const savedChat = await newChat.save();
+    // Truy vấn tin nhắn theo userId và cusId
+    const messages = await ChatModel.find({
+      userId: userId,
+      cusId: cusId,
+    }).sort({ timestamp: 1 }); // Sắp xếp theo thời gian gửi tin nhắn
 
-    // Trả về kết quả
-    res.status(201).json(savedChat);
-  } catch (error) {
-    res.status(500).json({ message: 'Lỗi khi gửi tin nhắn', error });
-  }
-});
+    // Nếu không có tin nhắn, trả về lỗi 404
+    if (messages.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy tin nhắn.' });
+    }
 
-// API để lấy tất cả tin nhắn (GET)
-app.get("/chats", async (req, res) => {
-  try {
-    // Lấy tất cả tin nhắn từ cơ sở dữ liệu
-    const chats = await Chat.find();
     // Trả về danh sách tin nhắn
-    res.status(200).json(chats);
+    res.status(200).json(messages);
   } catch (error) {
-    // Nếu có lỗi, trả về lỗi
-    res.status(500).json({ message: "Lỗi lấy tin nhắn", error });
+    console.error('Lỗi khi lấy tin nhắn:', error);
+    res.status(500).json({ error: 'Lỗi khi lấy tin nhắn.' });
   }
 });
 
-// API để lấy một tin nhắn theo ID (GET)
-app.get("/chats/:id", async (req, res) => {
+
+app.get('/messages', async (req, res) => {
   try {
-    // Tìm tin nhắn theo ID
-    const chat = await Chat.findById(req.params.id);
-    if (!chat) {
-      // Nếu không tìm thấy tin nhắn, trả về lỗi 404
-      return res.status(404).json({ message: "Không tìm thấy tin nhắn" });
+    // Lấy tất cả tin nhắn từ collection `chat`
+    const messages = await ChatModel.find().sort({ timestamp: 1 });
+
+    if (!messages.length) {
+      return res.status(404).json({ error: 'Không có tin nhắn nào.' });
     }
-    // Trả về tin nhắn tìm được
-    res.status(200).json(chat);
+
+    res.status(200).json(messages);
   } catch (error) {
-    // Nếu có lỗi, trả về lỗi
-    res.status(500).json({ message: "Lỗi lấy tin nhắn", error });
+    console.error('Lỗi khi lấy tin nhắn:', error);
+    res.status(500).json({ error: 'Lỗi khi lấy tin nhắn.' });
   }
 });
 
-// API để cập nhật tin nhắn theo ID (PUT)
-// app.put("/chats/:id", async (req, res) => {
-//   try {
-//     // Cập nhật tin nhắn theo ID, sử dụng dữ liệu mới từ request body
-//     const updatedChat = await Chat.findByIdAndUpdate(req.params.id, req.body, { new: true });
-//     if (updatedChat) {
-//       // Trả về tin nhắn đã được cập nhật
-//       res.status(200).json(updatedChat);
-//     } else {
-//       // Nếu không tìm thấy tin nhắn để cập nhật, trả về lỗi 404
-//       res.status(404).json({ message: "Không tìm thấy tin nhắn để cập nhật" });
-//     }
-//   } catch (error) {
-//     // Nếu có lỗi, trả về lỗi
-//     res.status(500).json({ message: "Lỗi cập nhật tin nhắn", error });
-//   }
-// });
 
-// API để xóa tin nhắn theo ID (DELETE)
-app.delete("/chats/:id", async (req, res) => {
-  try {
-    // Xóa tin nhắn theo ID
-    const deletedChat = await Chat.findByIdAndDelete(req.params.id);
-    if (deletedChat) {
-      // Trả về thông báo xóa thành công
-      res.status(200).json({ message: "Tin nhắn đã được xóa" });
-    } else {
-      // Nếu không tìm thấy tin nhắn để xóa, trả về lỗi 404
-      res.status(404).json({ message: "Không tìm thấy tin nhắn để xóa" });
-    }
-  } catch (error) {
-    // Nếu có lỗi, trả về lỗi
-    res.status(500).json({ message: "Lỗi xóa tin nhắn", error });
-  }
-});
+
+
+
+
+
+
+
+
+
 
 //--------------//
-//API lấy tất cả Voucher
-// app.get("/vouchers", async (req, res) => {
-//   try {
-//     // Lấy tất cả voucher
-//     const vouchers = await Voucher.find();
-//     res.status(200).json(vouchers);
-//   } catch (error) {
-//     // Nếu có lỗi, trả về lỗi
-//     res.status(500).json({ message: "Lỗi khi lấy danh sách voucher", error });
-//   }
-// });
-  app.get("/vouchers", async (req, res) => {
-    try {
-      const vouchers = await Voucher.find();
-      const normalizedVouchers = vouchers.map(voucher => ({
-        _id: voucher._id, // Giữ nguyên trường _id
-        price_reduced: voucher.price_reduced,
-        discount_code: voucher.discount_code,
-        quantity_voucher: voucher.quantity_voucher
-      }));
-      res.status(200).json(normalizedVouchers);
-    } catch (error) {
-      res.status(500).json({ message: "Lỗi khi lấy danh sách voucher", error });
-    }
-  });
+
+app.get("/vouchers", async (req, res) => {
+  try {
+    const vouchers = await Voucher.find();
+    const normalizedVouchers = vouchers.map(voucher => ({
+      _id: voucher._id, // Giữ nguyên trường _id
+      price_reduced: voucher.price_reduced,
+      discount_code: voucher.discount_code,
+      quantity_voucher: voucher.quantity_voucher
+    }));
+    res.status(200).json(normalizedVouchers);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi lấy danh sách voucher", error });
+  }
+});
 // Api lấy theo id
 app.get('/vouchers/:id', (req, res) => {
   const { id } = req.params;
@@ -613,7 +571,7 @@ app.get("/feedbacks", async (req, res) => {
   try {
     // Lấy tất cả dữ liệu phản hồi từ cơ sở dữ liệu
     const feedbacks = await FeebackModel.find().populate('cusId prodId'); // Populate để lấy thông tin từ 'cusId' và 'prodId'
-    
+
     // Normalized dữ liệu
     const normalizedFeedbacks = feedbacks.map(feedback => ({
       _id: feedback._id, // Giữ nguyên trường _id
@@ -623,7 +581,7 @@ app.get("/feedbacks", async (req, res) => {
       content: feedback.content,
       dateFeed: feedback.dateFeed
     }));
-    
+
     // Trả về danh sách feedback đã được chuẩn hóa
     res.status(200).json(normalizedFeedbacks);
   } catch (error) {
