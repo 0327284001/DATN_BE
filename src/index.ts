@@ -11,6 +11,7 @@ import category from "./danhmuc";
 import Order from "./OrderModel";
 import Chat from './ChatModel';
 import Voucher from './VoucherModel';
+import FeebackModel from "./FeebackModel";
 
 // import Statistic from "./Statistic";
 var cors = require("cors");
@@ -500,20 +501,20 @@ app.delete("/chats/:id", async (req, res) => {
 //     res.status(500).json({ message: "Lỗi khi lấy danh sách voucher", error });
 //   }
 // });
-app.get("/vouchers", async (req, res) => {
-  try {
-    const vouchers = await Voucher.find();
-    const normalizedVouchers = vouchers.map(voucher => ({
-      _id: voucher._id, // Giữ nguyên trường _id
-      price_reduced: voucher.price_reduced,
-      discount_code: voucher.discount_code,
-      quantity_voucher: voucher.quantity_voucher
-    }));
-    res.status(200).json(normalizedVouchers);
-  } catch (error) {
-    res.status(500).json({ message: "Lỗi khi lấy danh sách voucher", error });
-  }
-});
+  app.get("/vouchers", async (req, res) => {
+    try {
+      const vouchers = await Voucher.find();
+      const normalizedVouchers = vouchers.map(voucher => ({
+        _id: voucher._id, // Giữ nguyên trường _id
+        price_reduced: voucher.price_reduced,
+        discount_code: voucher.discount_code,
+        quantity_voucher: voucher.quantity_voucher
+      }));
+      res.status(200).json(normalizedVouchers);
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi khi lấy danh sách voucher", error });
+    }
+  });
 // Api lấy theo id
 app.get('/vouchers/:id', (req, res) => {
   const { id } = req.params;
@@ -561,7 +562,7 @@ app.post("/vouchers/add", async (req, res) => {
         res.status(400).json({ message: "Mã giảm giá đã tồn tại." });
         return;
       }
-    }    
+    }
   }
 });
 
@@ -603,6 +604,55 @@ app.delete("/vouchers/:id", async (req, res) => {
     res.status(500).json({ message: "Lỗi khi xóa voucher", error });
   }
 });
+
+/////////
+/////--------///
+//Feedback
+// API để lấy tất cả phản hồi
+app.get("/feedbacks", async (req, res) => {
+  try {
+    // Lấy tất cả dữ liệu phản hồi từ cơ sở dữ liệu
+    const feedbacks = await FeebackModel.find().populate('cusId prodId'); // Populate để lấy thông tin từ 'cusId' và 'prodId'
+    
+    // Normalized dữ liệu
+    const normalizedFeedbacks = feedbacks.map(feedback => ({
+      _id: feedback._id, // Giữ nguyên trường _id
+      cusId: feedback.cusId, // Lấy thông tin khách hàng (có thể mở rộng nếu cần)
+      prodId: feedback.prodId, // Lấy thông tin sản phẩm (có thể mở rộng nếu cần)
+      stars: feedback.stars,
+      content: feedback.content,
+      dateFeed: feedback.dateFeed
+    }));
+    
+    // Trả về danh sách feedback đã được chuẩn hóa
+    res.status(200).json(normalizedFeedbacks);
+  } catch (error) {
+    // Trả về lỗi nếu có vấn đề trong quá trình lấy dữ liệu
+    res.status(500).json({ message: "Lỗi khi lấy dữ liệu phản hồi", error });
+  }
+});
+
+
+
+/////////////////
+// API để xóa phản hồi theo id
+app.delete('/feedback/:id', async (req, res) => {
+  const { id } = req.params; // Lấy id từ params
+
+  try {
+    // Tìm và xóa phản hồi theo id
+    const feedback = await FeebackModel.findByIdAndDelete(id);
+
+    if (!feedback) {
+      return res.status(404).json({ message: 'Không tìm thấy phản hồi để xóa' });
+    }
+
+    res.status(200).json({ message: 'Phản hồi đã được xóa thành công' });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi khi xóa phản hồi', error });
+  }
+});
+
 
 
 app.listen(PORT, () => {
