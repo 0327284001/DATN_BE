@@ -405,15 +405,10 @@ app.get('/messages/:userId/:cusId', async (req, res) => {
   const { userId, cusId } = req.params;
 
   try {
-    // Kiểm tra userId có hợp lệ không
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ error: 'userId không hợp lệ.' });
-    }
-
     // Truy vấn tin nhắn theo userId và cusId
     const messages = await ChatModel.find({
-      userId: userId,
-      cusId: cusId,
+      userId: userId,  // Trường userId từ model
+      cusId: cusId,    // Trường cusId từ model
     }).sort({ timestamp: 1 }); // Sắp xếp theo thời gian gửi tin nhắn
 
     // Nếu không có tin nhắn, trả về lỗi 404
@@ -428,6 +423,7 @@ app.get('/messages/:userId/:cusId', async (req, res) => {
     res.status(500).json({ error: 'Lỗi khi lấy tin nhắn.' });
   }
 });
+
 
 
 app.get('/messages', async (req, res) => {

@@ -8,8 +8,8 @@ const ChatSchema = new mongoose.Schema({
         required: true,
     },
     userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // Liên kết tới bảng User
+        type: String,
+        maxlength: 255,
         required: true,
     },
     message: {
