@@ -1,26 +1,25 @@
+import mongoose from 'mongoose';
 
-
-const mongoose = require('mongoose');
-
-const FeebackAppSchema = mongoose.Schema({
-    //id ngẫu nhiên của mongo không cần khai báo
+const FeebackAppSchema = new mongoose.Schema({
     cusId: {
         type: String,
-        maxlength: 255
+        maxlength: 255,
+        required: true,
     },
     start: {
         type: Number,
-        required: true
+        required: true,
     },
     content: {
         type: String,
-        maxlength: 255
+        maxlength: 255,
     },
     dateFeed: {
-        type: Date
+        type: Date,
+        default: Date.now,
     },
+}, { timestamps: true });
 
-});
+const FeebackAppModel = mongoose.model('FeebackApp', FeebackAppSchema);
 
-const FeebackAppModel = mongoose.model('feebackapp', FeebackAppSchema);
-module.exports = FeebackAppModel;
+export default FeebackAppModel;  // Sử dụng export default để xuất mô hình

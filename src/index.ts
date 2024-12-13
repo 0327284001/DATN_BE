@@ -9,10 +9,12 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import category from "./danhmuc";
 import Order from "./OrderModel";
-// import Chat from './ChatModel';
 import Voucher from './VoucherModel';
 import FeebackModel from "./FeebackModel";
 import ChatModel from "./ChatModel";
+import FeebackAppModel from "./FeebackAppModel";
+// import FeebackAppModel from './FeebackAppModel';
+
 
 // import Statistic from "./Statistic";
 var cors = require("cors");
@@ -503,14 +505,6 @@ app.get('/messages/:cusId', async (req, res) => {
 
 
 
-
-
-
-
-
-
-
-
 //--------------//
 
 app.get("/vouchers", async (req, res) => {
@@ -693,6 +687,70 @@ app.delete('/feedbacks/:id', async (req, res) => {
   }
 });
 
+///// FeedbackApp
+// Lấy tất cả dữ liệu feedbackap
+app.get("/feebackapps", async (req, res) => {
+  try {
+      console.log("Fetching feedbacks...");
+
+      // Lấy tất cả dữ liệu từ MongoDB
+      const feedbackapps = await FeebackAppModel.find();  // TypeScript sẽ tự suy luận kiểu dữ liệu
+
+      console.log("Feedbacks fetched:", feedbackapps);
+
+      // Chuẩn hóa dữ liệu trả về
+      const normalizedFeedbacks = feedbackapps.map((feedbackapp) => ({
+          id: feedbackapp._id,
+          cusId: feedbackapp.cusId,
+          start: feedbackapp.start,
+          content: feedbackapp.content,
+          dateFeed: feedbackapp.dateFeed,
+      }));
+
+      // Trả về phản hồi
+      res.status(200).json(normalizedFeedbacks);
+  } catch (error: any) {  // Xử lý kiểu 'unknown' cho error
+      console.error("Error fetching feedbacks:", error); // Ghi lỗi vào console để debug
+      res.status(500).json({ 
+          message: "Lỗi khi lấy dữ liệu feedback", 
+          error: error.message // Bao gồm chi tiết lỗi 
+      });
+  }
+});
+
+
+// Xóa feedbackapp theo ID
+app.delete("/feebackapps/:id", async (req, res) => {
+  try {
+      const { id } = req.params;  // Lấy id từ URL params
+
+      console.log(`Deleting feedback with id: ${id}`);
+
+      // Tìm và xóa feedback theo ID
+      const deletedFeedback = await FeebackAppModel.findByIdAndDelete(id);
+
+      if (!deletedFeedback) {
+          return res.status(404).json({
+              message: "Feedback không tồn tại",
+          });
+      }
+
+      console.log("Feedback deleted:", deletedFeedback);
+
+      // Trả về phản hồi sau khi xóa thành công
+      res.status(200).json({
+          message: "Feedback đã được xóa thành công",
+          deletedFeedback: deletedFeedback, // Trả về thông tin của feedback đã xóa
+      });
+
+  } catch (error: any) {
+      console.error("Error deleting feedback:", error);
+      res.status(500).json({
+          message: "Lỗi khi xóa feedback",
+          error: error.message,
+      });
+  }
+});
 
 
 app.listen(PORT, () => {
