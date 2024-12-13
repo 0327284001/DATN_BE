@@ -9,7 +9,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import category from "./danhmuc";
 import Order from "./OrderModel";
-import Chat from './ChatModel';
+// import Chat from './ChatModel';
 import Voucher from './VoucherModel';
 import FeebackModel from "./FeebackModel";
 import ChatModel from "./ChatModel";
@@ -399,19 +399,51 @@ app.put("/orders/:id", async (req, res) => {
 
 //------------//
 
-// API để tạo tin nhắn mới (POST)
+// API để chat
 
-app.get('/messages/:userId/:cusId', async (req, res) => {
-  const { userId, cusId } = req.params;
+// app.get('/messages/:cusId/:userId', async (req, res) => {
+//   const { cusId, userId } = req.params;
+
+//   try {
+//     // Tìm kiếm các tin nhắn giữa cusId và userId
+//     const messages = await ChatModel.find({
+//       cusId: cusId, // Tìm theo cusId
+//       userId: userId, // Tìm theo userId
+//     }).sort({ timestamp: 1 }); // Sắp xếp theo thời gian gửi (tăng dần)
+
+//     // Nếu không tìm thấy tin nhắn
+//     if (messages.length === 0) {
+//       return res.status(404).json({ error: 'Không tìm thấy tin nhắn.' });
+//     }
+
+//     // Trả về danh sách tin nhắn
+//     res.status(200).json(messages);
+//   } catch (error) {
+//     console.error('Lỗi khi lấy tin nhắn:', error);
+//     res.status(500).json({ error: 'Lỗi khi lấy tin nhắn.' });
+//   }
+// });
+app.get('/messages/:cusId/:userId', async (req, res) => {
+  const { cusId, userId } = req.params;
+  console.log("cusId:", cusId);
+  // In ra giá trị userId nhận được từ yêu cầu để kiểm tra
+  console.log("userId:", userId);
+
+  // Kiểm tra userId có hợp lệ không (24 ký tự hex)
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ error: 'userId không hợp lệ.' });
+  }
 
   try {
-    // Truy vấn tin nhắn theo userId và cusId
+    // Tìm kiếm các tin nhắn giữa cusId và userId
     const messages = await ChatModel.find({
-      userId: userId,  // Trường userId từ model
-      cusId: cusId,    // Trường cusId từ model
-    }).sort({ timestamp: 1 }); // Sắp xếp theo thời gian gửi tin nhắn
+      cusId: cusId, // Tìm theo cusId
+      userId: new mongoose.Types.ObjectId(userId), // Chuyển userId thành ObjectId (sử dụng 'new')
+    })
+    .populate('userId', 'name email')  // Populate thông tin từ bảng User (name, email)
+    .sort({ timestamp: 1 }); // Sắp xếp theo thời gian gửi (tăng dần)
 
-    // Nếu không có tin nhắn, trả về lỗi 404
+    // Nếu không tìm thấy tin nhắn
     if (messages.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy tin nhắn.' });
     }
@@ -424,12 +456,13 @@ app.get('/messages/:userId/:cusId', async (req, res) => {
   }
 });
 
-
-
+// Lấy tất cả tin nhắn
 app.get('/messages', async (req, res) => {
   try {
-    // Lấy tất cả tin nhắn từ collection `chat`
-    const messages = await ChatModel.find().sort({ timestamp: 1 });
+    // Lấy tất cả tin nhắn từ collection `chat`, chỉ trả về các thuộc tính cần thiết
+    const messages = await ChatModel.find()
+      .select('message chatStatus timestamp') // Chỉ lấy message, chatStatus và timestamp
+      .sort({ timestamp: 1 });
 
     if (!messages.length) {
       return res.status(404).json({ error: 'Không có tin nhắn nào.' });
@@ -441,6 +474,31 @@ app.get('/messages', async (req, res) => {
     res.status(500).json({ error: 'Lỗi khi lấy tin nhắn.' });
   }
 });
+
+
+// Lấy tin nhắn theo cusId
+app.get('/messages/:cusId', async (req, res) => {
+  const cusId = req.params.cusId;
+
+  if (!cusId) {
+    return res.status(400).json({ error: 'Thiếu cusId.' });
+  }
+
+  try {
+    // Tìm tin nhắn theo cusId
+    const messages = await ChatModel.find({ cusId }).sort({ timestamp: 1 });
+
+    if (!messages.length) {
+      return res.status(404).json({ error: 'Không có tin nhắn nào cho cusId này.' });
+    }
+
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error('Lỗi khi lấy tin nhắn theo cusId:', error);
+    res.status(500).json({ error: 'Lỗi server khi lấy tin nhắn.' });
+  }
+});
+
 
 
 
@@ -563,30 +621,58 @@ app.delete("/vouchers/:id", async (req, res) => {
 /////--------///
 //Feedback
 // API để lấy tất cả phản hồi
+// app.get("/feedbacks", async (req, res) => {
+//   try {
+//     // Lấy tất cả dữ liệu phản hồi từ cơ sở dữ liệu
+//     const feedbacks = await FeebackModel.find().populate('cusId prodId'); // Populate để lấy thông tin từ 'cusId' và 'prodId'
+
+//     // Normalized dữ liệu
+//     const normalizedFeedbacks = feedbacks.map(feedback => ({
+//       _id: feedback._id, // Giữ nguyên trường _id
+//       cusId: feedback.cusId, // Lấy thông tin khách hàng (có thể mở rộng nếu cần)
+//       prodId: feedback.prodId, // Lấy thông tin sản phẩm (có thể mở rộng nếu cần)
+//       stars: feedback.stars,
+//       content: feedback.content,
+//       dateFeed: feedback.dateFeed
+//     }));
+
+//     // Trả về danh sách feedback đã được chuẩn hóa
+//     res.status(200).json(normalizedFeedbacks);
+//   } catch (error) {
+//     // Trả về lỗi nếu có vấn đề trong quá trình lấy dữ liệu
+//     res.status(500).json({ message: "Lỗi khi lấy dữ liệu phản hồi", error });
+//   }
+// });
+
 app.get("/feedbacks", async (req, res) => {
   try {
-    // Lấy tất cả dữ liệu phản hồi từ cơ sở dữ liệu
-    const feedbacks = await FeebackModel.find().populate('cusId prodId'); // Populate để lấy thông tin từ 'cusId' và 'prodId'
+    // Lấy dữ liệu feedback từ cơ sở dữ liệu
+    console.log("Fetching feedbacks...");
+    const feedbacks = await FeebackModel.find().populate("prodId", "name price");
+    console.log("Feedbacks fetched:", feedbacks);
+    
 
-    // Normalized dữ liệu
+    // Chuẩn hóa dữ liệu trả về
     const normalizedFeedbacks = feedbacks.map(feedback => ({
-      _id: feedback._id, // Giữ nguyên trường _id
-      cusId: feedback.cusId, // Lấy thông tin khách hàng (có thể mở rộng nếu cần)
-      prodId: feedback.prodId, // Lấy thông tin sản phẩm (có thể mở rộng nếu cần)
-      stars: feedback.stars,
+      id: feedback._id,
+      cusId: feedback.cusId,
+      prodId: feedback.prodId,
+      stars: feedback.start,
       content: feedback.content,
-      dateFeed: feedback.dateFeed
+      dateFeed: feedback.dateFeed,
     }));
 
-    // Trả về danh sách feedback đã được chuẩn hóa
+    // Trả về phản hồi
     res.status(200).json(normalizedFeedbacks);
   } catch (error) {
-    // Trả về lỗi nếu có vấn đề trong quá trình lấy dữ liệu
-    res.status(500).json({ message: "Lỗi khi lấy dữ liệu phản hồi", error });
-  }
+    console.error("Error fetching feedbacks:", error); // Ghi lỗi vào console để debug
+    res.status(500).json({ 
+        message: "Lỗi khi lấy dữ liệu feedback", 
+        error: error // Bao gồm chi tiết lỗi 
+    });
+}
+
 });
-
-
 
 /////////////////
 // API để xóa phản hồi theo id
