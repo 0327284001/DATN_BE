@@ -1,17 +1,26 @@
 import mongoose from 'mongoose'; // Chỉ import mongoose một lần
+import { IProduct } from "./product";
+
+interface IFeedback extends Document {
+    cusId: string;
+    prodId: mongoose.Types.ObjectId | IProduct; // Có thể là ObjectId hoặc đối tượng Product
+    stars: number;
+    content?: string;
+    dateFeed: Date;
+  }
 
 const FeebackSchema = new mongoose.Schema({
     cusId: {
-        type: mongoose.Schema.Types.ObjectId, // Dùng ObjectId để liên kết đến khách hàng
-        ref: 'customer', // Tham chiếu đến collection 'customer'
+        type: String,
+        // ref: 'customer', 
         required: true
     },
     prodId: {
         type: mongoose.Schema.Types.ObjectId, // Dùng ObjectId để liên kết đến sản phẩm
-        ref: 'product', // Tham chiếu đến collection 'product'
+        ref: 'Product', // Tham chiếu đến collection 'product'
         required: true
     },
-    stars: { // Đổi tên từ 'start' thành 'stars' cho đúng nghĩa
+    start: { // Đổi tên từ 'start' thành 'stars' cho đúng nghĩa
         type: Number,
         required: true,
         min: 1,
@@ -27,5 +36,5 @@ const FeebackSchema = new mongoose.Schema({
     }
 });
 
-const FeebackModel = mongoose.model('feedback', FeebackSchema);
+const FeebackModel = mongoose.model('feeback', FeebackSchema);
 export default FeebackModel; // Sử dụng export thay vì module.exports nếu dùng ES6
