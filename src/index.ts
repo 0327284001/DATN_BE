@@ -676,7 +676,7 @@ app.get("/feedbacks", async (req, res) => {
 
 /////////////////
 // API để xóa phản hồi theo id
-app.delete('/feedback/:id', async (req, res) => {
+app.delete('/feedbacks/:id', async (req, res) => {
   const { id } = req.params; // Lấy id từ params
 
   try {
