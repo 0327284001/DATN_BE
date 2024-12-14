@@ -7,16 +7,16 @@ const ChatSchema = new mongoose.Schema({
         maxlength: 255,
         required: true,
     },
-    // userId: {
-    //     type: String,
-    //     maxlength: 255,
-    //     required: true,
-    // },
     userId: {
-        type: mongoose.Schema.Types.ObjectId,  // Đổi thành ObjectId
-        ref: 'User',  // Tham chiếu tới bảng User
+        type: String,
+        maxlength: 255,
         required: true,
     },
+    // userId: {
+    //     type: mongoose.Schema.Types.ObjectId,  // Đổi thành ObjectId
+    //     ref: 'User',  // Tham chiếu tới bảng User
+    //     required: true,
+    // },
     message: {
         type: String, // Nội dung tin nhắn
         required: true,
