@@ -425,38 +425,7 @@ app.get('/messages/:cusId/:userId', async (req, res) => {
     res.status(500).json({ error: 'Lỗi khi lấy tin nhắn.' });
   }
 });
-// app.get('/messages/:cusId/:userId', async (req, res) => {
-//   const { cusId, userId } = req.params;
-//   console.log("cusId:", cusId);
-//   // In ra giá trị userId nhận được từ yêu cầu để kiểm tra
-//   console.log("userId:", userId);
 
-//   // Kiểm tra userId có hợp lệ không (24 ký tự hex)
-//   if (!mongoose.Types.ObjectId.isValid(userId)) {
-//     return res.status(400).json({ error: 'userId không hợp lệ.' });
-//   }
-
-//   try {
-//     // Tìm kiếm các tin nhắn giữa cusId và userId
-//     const messages = await ChatModel.find({
-//       cusId: cusId, // Tìm theo cusId
-//       userId: new mongoose.Types.ObjectId(userId), // Chuyển userId thành ObjectId (sử dụng 'new')
-//     })
-//     .populate('userId', 'name email')  // Populate thông tin từ bảng User (name, email)
-//     .sort({ timestamp: 1 }); // Sắp xếp theo thời gian gửi (tăng dần)
-
-//     // Nếu không tìm thấy tin nhắn
-//     if (messages.length === 0) {
-//       return res.status(404).json({ error: 'Không tìm thấy tin nhắn.' });
-//     }
-
-//     // Trả về danh sách tin nhắn
-//     res.status(200).json(messages);
-//   } catch (error) {
-//     console.error('Lỗi khi lấy tin nhắn:', error);
-//     res.status(500).json({ error: 'Lỗi khi lấy tin nhắn.' });
-//   }
-// });
 
 // Lấy tất cả tin nhắn
 app.get('/messages', async (req, res) => {
@@ -474,6 +443,117 @@ app.get('/messages', async (req, res) => {
   } catch (error) {
     console.error('Lỗi khi lấy tin nhắn:', error);
     res.status(500).json({ error: 'Lỗi khi lấy tin nhắn.' });
+  }
+});
+
+
+/////////-----------------///////
+app.get('/chats', async (req, res) => {
+  try {
+    const chats = await ChatModel.find(); // Lấy tất cả dữ liệu từ bảng chats
+    res.json(chats); // Trả về dữ liệu dưới dạng JSON
+  } catch (error) {
+    console.error('Lỗi khi lấy dữ liệu:', error);
+    res.status(500).json({ message: 'Lỗi khi lấy dữ liệu' });
+  }
+});
+
+// API để lấy tin nhắn theo ID
+app.get('/chats/:id', async (req, res) => {
+  const { id } = req.params; // Lấy id từ URL params
+  try {
+    const chat = await ChatModel.findById(id); // Lấy tin nhắn theo ID
+    if (!chat) {
+      return res.status(404).json({ message: 'Tin nhắn không tồn tại' });
+    }
+    res.json(chat); // Trả về tin nhắn dưới dạng JSON
+  } catch (error) {
+    console.error('Lỗi khi lấy tin nhắn theo ID:', error);
+    res.status(500).json({ message: 'Lỗi khi lấy tin nhắn theo ID' });
+  }
+});
+
+// API để lấy tin nhắn theo cusId (ID khách hàng)
+app.get('/chats/cus/:cusId', async (req, res) => {
+  const { cusId } = req.params; // Lấy cusId từ URL params
+  try {
+    const chats = await ChatModel.find({ cusId }); // Lấy tất cả tin nhắn theo cusId
+    if (chats.length === 0) {
+      return res.status(404).json({ message: 'Không có tin nhắn cho khách hàng này' });
+    }
+    res.json(chats); // Trả về danh sách tin nhắn cho cusId
+  } catch (error) {
+    console.error('Lỗi khi lấy tin nhắn theo cusId:', error);
+    res.status(500).json({ message: 'Lỗi khi lấy tin nhắn theo cusId' });
+  }
+});
+
+app.delete('/chats/cus/:cusId', async (req, res) => {
+  const { cusId } = req.params; // Lấy cusId từ URL params
+  try {
+    const result = await ChatModel.deleteMany({ cusId }); // Xóa tất cả tin nhắn theo cusId
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy tin nhắn để xóa cho khách hàng này' });
+    }
+    res.json({ message: 'Xóa cuộc trò chuyện thành công' }); // Trả về thông báo thành công
+  } catch (error) {
+    console.error('Lỗi khi xóa tin nhắn theo cusId:', error);
+    res.status(500).json({ message: 'Lỗi khi xóa tin nhắn theo cusId' });
+  }
+});
+
+app.delete('/chats/:id', async (req, res) => {
+  const { id } = req.params; // Lấy _id của tin nhắn từ URL params
+  try {
+    const result = await ChatModel.deleteOne({ _id: id }); // Xóa tin nhắn theo _id
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy tin nhắn với ID này' });
+    }
+    res.json({ message: 'Xóa tin nhắn thành công' }); // Trả về thông báo thành công
+  } catch (error) {
+    console.error('Lỗi khi xóa tin nhắn:', error);
+    res.status(500).json({ message: 'Lỗi khi xóa tin nhắn' });
+  }
+});
+
+
+
+// Endpoint lấy tất cả tin nhắn
+app.get('/messages', async (req, res) => {
+  try {
+    // Lấy tất cả tin nhắn từ collection `chat`, chỉ trả về các thuộc tính cần thiết
+    const messages = await ChatModel.find()
+      .select('message chatStatus timestamp') // Chỉ lấy message, chatStatus và timestamp
+      .sort({ timestamp: 1 });
+
+    if (!messages.length) {
+      return res.status(404).json({ error: 'Không có tin nhắn nào.' });
+    }
+
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error('Lỗi khi lấy tin nhắn:', error);
+    res.status(500).json({ error: 'Lỗi khi lấy tin nhắn.' });
+  }
+});
+
+//  lấy tin nhắn theo `_id`
+app.get('/messages/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Tìm tin nhắn theo `_id`
+    const message = await ChatModel.findById(id)
+      .select('message chatStatus timestamp'); // Chỉ lấy message, chatStatus và timestamp
+
+    if (!message) {
+      return res.status(404).json({ error: `Không tìm thấy tin nhắn với _id: ${id}` });
+    }
+
+    res.status(200).json(message);
+  } catch (error) {
+    console.error('Lỗi khi lấy tin nhắn theo _id:', error);
+    res.status(500).json({ error: 'Lỗi khi lấy tin nhắn theo _id.' });
   }
 });
 
@@ -503,24 +583,16 @@ app.get('/messages/:cusId', async (req, res) => {
 
 //xóa tin nhắn theo _id
 app.delete('/messages/:id', async (req, res) => {
-  const id = req.params.id;
-
-  if (!id) {
-    return res.status(400).json({ error: 'Thiếu id.' });
-  }
-
+  const { id } = req.params;
   try {
-    // Tìm và xóa tin nhắn theo id
-    const deletedMessage = await ChatModel.findByIdAndDelete(id);
-
-    if (!deletedMessage) {
-      return res.status(404).json({ error: 'Không tìm thấy tin nhắn để xóa.' });
+    const result = await ChatModel.deleteOne({ _id: id });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy tin nhắn với ID này' });
     }
-
-    res.status(200).json({ message: 'Xóa tin nhắn thành công.', data: deletedMessage });
+    res.json({ message: 'Xóa tin nhắn thành công' });
   } catch (error) {
     console.error('Lỗi khi xóa tin nhắn:', error);
-    res.status(500).json({ error: 'Lỗi server khi xóa tin nhắn.' });
+    res.status(500).json({ message: 'Lỗi khi xóa tin nhắn' });
   }
 });
 
@@ -685,30 +757,7 @@ app.delete("/vouchers/:id", async (req, res) => {
 
 /////////
 /////--------///
-//Feedback
-// API để lấy tất cả phản hồi
-// app.get("/feedbacks", async (req, res) => {
-//   try {
-//     // Lấy tất cả dữ liệu phản hồi từ cơ sở dữ liệu
-//     const feedbacks = await FeebackModel.find().populate('cusId prodId'); // Populate để lấy thông tin từ 'cusId' và 'prodId'
 
-//     // Normalized dữ liệu
-//     const normalizedFeedbacks = feedbacks.map(feedback => ({
-//       _id: feedback._id, // Giữ nguyên trường _id
-//       cusId: feedback.cusId, // Lấy thông tin khách hàng (có thể mở rộng nếu cần)
-//       prodId: feedback.prodId, // Lấy thông tin sản phẩm (có thể mở rộng nếu cần)
-//       stars: feedback.stars,
-//       content: feedback.content,
-//       dateFeed: feedback.dateFeed
-//     }));
-
-//     // Trả về danh sách feedback đã được chuẩn hóa
-//     res.status(200).json(normalizedFeedbacks);
-//   } catch (error) {
-//     // Trả về lỗi nếu có vấn đề trong quá trình lấy dữ liệu
-//     res.status(500).json({ message: "Lỗi khi lấy dữ liệu phản hồi", error });
-//   }
-// });
 
 app.get("/feedbacks", async (req, res) => {
   try {
