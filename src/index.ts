@@ -913,36 +913,27 @@ app.get(
 );
 
 //thêm tin tức
-app.post(
-  "/artstories",
-  asyncHandler(async (req: Request, res: Response) => {
-    try {
-      const { title, author, description, content, caption, imageUrl } = req.body;
+// Khi nhận được yêu cầu từ frontend, lưu thông tin bài viết với URL ảnh vào MongoDB
+app.post('/artstories', async (req, res) => {
+  const { title, author, date, description, content, caption, imageUrl } = req.body;
+  const newArtStory = new ArtStoryModel({
+    title,
+    author,
+    date,
+    description,
+    content,
+    caption,
+    imageUrl,  // Lưu URL ảnh vào MongoDB
+  });
 
-      if (!title || !content) {
-        return res.status(400).json({ message: "Title và Content là bắt buộc" });
-      }
-
-      const newArtStory = new ArtStoryModel({
-        title,
-        author,
-        description,
-        content,
-        caption,
-        imageUrl,
-      });
-
-      const savedArtStory = await newArtStory.save();
-
-      res.status(201).json({
-        message: "Tạo tin tức thành công",
-        artStory: savedArtStory,
-      });
-    } catch (error) {
-      res.status(500).json({ message: "Lỗi server", error });
-    }
-  })
-);
+  try {
+    await newArtStory.save();
+    res.status(201).send({ message: 'Thêm mới thành công!' });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send({ message: 'Lỗi khi lưu dữ liệu!' });
+  }
+});
 
 //api sửa tin tức theo id
 app.put(
