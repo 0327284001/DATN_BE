@@ -475,7 +475,7 @@ app.get('/chats/:id', async (req, res) => {
 });
 
 // API để lấy tin nhắn theo cusId (ID khách hàng)
-app.get('/chats/cus/:cusId', async (req, res) => {
+app.get('/chats/customer/:cusId', async (req, res) => {
   const { cusId } = req.params; // Lấy cusId từ URL params
   try {
     const chats = await ChatModel.find({ cusId }); // Lấy tất cả tin nhắn theo cusId
@@ -489,7 +489,7 @@ app.get('/chats/cus/:cusId', async (req, res) => {
   }
 });
 
-app.delete('/chats/cus/:cusId', async (req, res) => {
+app.delete('/chats/customer/:cusId', async (req, res) => {
   const { cusId } = req.params; // Lấy cusId từ URL params
   try {
     const result = await ChatModel.deleteMany({ cusId }); // Xóa tất cả tin nhắn theo cusId
