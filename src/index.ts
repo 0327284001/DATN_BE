@@ -13,6 +13,7 @@ import Voucher from './VoucherModel';
 import FeebackModel from "./FeebackModel";
 import ChatModel from "./ChatModel";
 import FeebackAppModel from "./FeebackAppModel";
+import ArtStoryModel from "./ArtStoryModel";
 // import FeebackAppModel from './FeebackAppModel';
 
 
@@ -765,7 +766,7 @@ app.get("/feedbacks", async (req, res) => {
     console.log("Fetching feedbacks...");
     const feedbacks = await FeebackModel.find().populate("prodId", "name price");
     console.log("Feedbacks fetched:", feedbacks);
-    
+
 
     // Chuẩn hóa dữ liệu trả về
     const normalizedFeedbacks = feedbacks.map(feedback => ({
@@ -781,11 +782,11 @@ app.get("/feedbacks", async (req, res) => {
     res.status(200).json(normalizedFeedbacks);
   } catch (error) {
     console.error("Error fetching feedbacks:", error); // Ghi lỗi vào console để debug
-    res.status(500).json({ 
-        message: "Lỗi khi lấy dữ liệu feedback", 
-        error: error // Bao gồm chi tiết lỗi 
+    res.status(500).json({
+      message: "Lỗi khi lấy dữ liệu feedback",
+      error: error // Bao gồm chi tiết lỗi 
     });
-}
+  }
 
 });
 
@@ -812,30 +813,30 @@ app.delete('/feedbacks/:id', async (req, res) => {
 // Lấy tất cả dữ liệu feedbackap
 app.get("/feebackapps", async (req, res) => {
   try {
-      console.log("Fetching feedbacks...");
+    console.log("Fetching feedbacks...");
 
-      // Lấy tất cả dữ liệu từ MongoDB
-      const feedbackapps = await FeebackAppModel.find();  // TypeScript sẽ tự suy luận kiểu dữ liệu
+    // Lấy tất cả dữ liệu từ MongoDB
+    const feedbackapps = await FeebackAppModel.find();  // TypeScript sẽ tự suy luận kiểu dữ liệu
 
-      console.log("Feedbacks fetched:", feedbackapps);
+    console.log("Feedbacks fetched:", feedbackapps);
 
-      // Chuẩn hóa dữ liệu trả về
-      const normalizedFeedbacks = feedbackapps.map((feedbackapp) => ({
-          id: feedbackapp._id,
-          cusId: feedbackapp.cusId,
-          start: feedbackapp.start,
-          content: feedbackapp.content,
-          dateFeed: feedbackapp.dateFeed,
-      }));
+    // Chuẩn hóa dữ liệu trả về
+    const normalizedFeedbacks = feedbackapps.map((feedbackapp) => ({
+      id: feedbackapp._id,
+      cusId: feedbackapp.cusId,
+      start: feedbackapp.start,
+      content: feedbackapp.content,
+      dateFeed: feedbackapp.dateFeed,
+    }));
 
-      // Trả về phản hồi
-      res.status(200).json(normalizedFeedbacks);
+    // Trả về phản hồi
+    res.status(200).json(normalizedFeedbacks);
   } catch (error: any) {  // Xử lý kiểu 'unknown' cho error
-      console.error("Error fetching feedbacks:", error); // Ghi lỗi vào console để debug
-      res.status(500).json({ 
-          message: "Lỗi khi lấy dữ liệu feedback", 
-          error: error.message // Bao gồm chi tiết lỗi 
-      });
+    console.error("Error fetching feedbacks:", error); // Ghi lỗi vào console để debug
+    res.status(500).json({
+      message: "Lỗi khi lấy dữ liệu feedback",
+      error: error.message // Bao gồm chi tiết lỗi 
+    });
   }
 });
 
@@ -843,35 +844,176 @@ app.get("/feebackapps", async (req, res) => {
 // Xóa feedbackapp theo ID
 app.delete("/feebackapps/:id", async (req, res) => {
   try {
-      const { id } = req.params;  // Lấy id từ URL params
+    const { id } = req.params;  // Lấy id từ URL params
 
-      console.log(`Deleting feedback with id: ${id}`);
+    console.log(`Deleting feedback with id: ${id}`);
 
-      // Tìm và xóa feedback theo ID
-      const deletedFeedback = await FeebackAppModel.findByIdAndDelete(id);
+    // Tìm và xóa feedback theo ID
+    const deletedFeedback = await FeebackAppModel.findByIdAndDelete(id);
 
-      if (!deletedFeedback) {
-          return res.status(404).json({
-              message: "Feedback không tồn tại",
-          });
-      }
-
-      console.log("Feedback deleted:", deletedFeedback);
-
-      // Trả về phản hồi sau khi xóa thành công
-      res.status(200).json({
-          message: "Feedback đã được xóa thành công",
-          deletedFeedback: deletedFeedback, // Trả về thông tin của feedback đã xóa
+    if (!deletedFeedback) {
+      return res.status(404).json({
+        message: "Feedback không tồn tại",
       });
+    }
+
+    console.log("Feedback deleted:", deletedFeedback);
+
+    // Trả về phản hồi sau khi xóa thành công
+    res.status(200).json({
+      message: "Feedback đã được xóa thành công",
+      deletedFeedback: deletedFeedback, // Trả về thông tin của feedback đã xóa
+    });
 
   } catch (error: any) {
-      console.error("Error deleting feedback:", error);
-      res.status(500).json({
-          message: "Lỗi khi xóa feedback",
-          error: error.message,
-      });
+    console.error("Error deleting feedback:", error);
+    res.status(500).json({
+      message: "Lỗi khi xóa feedback",
+      error: error.message,
+    });
   }
 });
+
+//crud artstory(tin tức)
+app.get(
+  "/artstories",
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const artStories = await ArtStoryModel.find();
+      res.status(200).json(artStories); 
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi server", error });
+    }
+  })
+);
+
+
+//lấy theo id
+app.get(
+  "/artstories/:id",
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ message: "ID không hợp lệ" });
+      }
+
+      const artStory = await ArtStoryModel.findById(id);
+
+      if (!artStory) {
+        return res.status(404).json({ message: "Không tìm thấy tin tức" });
+      }
+
+      res.status(200).json(artStory);
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi server", error });
+    }
+  })
+);
+
+//thêm tin tức
+app.post(
+  "/artstories",
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const { title, author, description, content, caption, imageUrl } = req.body;
+
+      if (!title || !content) {
+        return res.status(400).json({ message: "Title và Content là bắt buộc" });
+      }
+
+      const newArtStory = new ArtStoryModel({
+        title,
+        author,
+        description,
+        content,
+        caption,
+        imageUrl,
+      });
+
+      const savedArtStory = await newArtStory.save();
+
+      res.status(201).json({
+        message: "Tạo tin tức thành công",
+        artStory: savedArtStory,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi server", error });
+    }
+  })
+);
+
+//api sửa tin tức theo id
+app.put(
+  "/artstories/:id",
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params; 
+      const { title, author, description, content, caption, imageUrl } = req.body;
+
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ message: "ID không hợp lệ" });
+      }
+
+      const updatedArtStory = await ArtStoryModel.findByIdAndUpdate(
+        id,
+        {
+          title,
+          author,
+          description,
+          content,
+          caption,
+          imageUrl,
+        },
+        { new: true } 
+      );
+
+      
+      if (!updatedArtStory) {
+        return res.status(404).json({ message: "Không tìm thấy tin tức" });
+      }
+
+     
+      res.status(200).json({
+        message: "Cập nhật tin tức thành công",
+        artStory: updatedArtStory,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi server", error });
+    }
+  })
+);
+
+app.delete(
+  "/artstories/:id",
+  asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params; 
+
+      
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ message: "ID không hợp lệ" });
+      }
+
+     
+      const deletedArtStory = await ArtStoryModel.findByIdAndDelete(id);
+
+      
+      if (!deletedArtStory) {
+        return res.status(404).json({ message: "Không tìm thấy tin tức để xóa" });
+      }
+
+     
+      res.status(200).json({
+        message: "Xóa tin tức thành công",
+        artStory: deletedArtStory,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Lỗi server", error });
+    }
+  })
+);
 
 
 app.listen(PORT, () => {
