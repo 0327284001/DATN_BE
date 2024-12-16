@@ -915,6 +915,7 @@ app.get(
 //thêm tin tức
 // Khi nhận được yêu cầu từ frontend, lưu thông tin bài viết với URL ảnh vào MongoDB
 app.post('/artstories', async (req, res) => {
+  console.log(req.body); 
   const { title, author, date, description, content, caption, imageUrl } = req.body;
   const newArtStory = new ArtStoryModel({
     title,
