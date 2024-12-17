@@ -807,38 +807,39 @@ app.get("/vouchers", async (req, res) => {
   try {
     const vouchers = await Voucher.find();
     const normalizedVouchers = vouchers.map(voucher => ({
-      _id: voucher._id, // Giữ nguyên trường _id
+      _id: voucher._id,
       price_reduced: voucher.price_reduced,
       discount_code: voucher.discount_code,
-      quantity_voucher: voucher.quantity_voucher
+      type_voucher: voucher.type_voucher, // Thêm type_voucher
+      quantity_voucher: voucher.quantity_voucher,
     }));
     res.status(200).json(normalizedVouchers);
   } catch (error) {
     res.status(500).json({ message: "Lỗi khi lấy danh sách voucher", error });
   }
 });
+
 // Api lấy theo id
-app.get('/vouchers/:id', (req, res) => {
-  const { id } = req.params;
-  // Lấy voucher từ cơ sở dữ liệu với ID
-  Voucher.findById(id)
-    .then(voucher => {
-      if (!voucher) {
-        return res.status(404).json({ message: 'Voucher không tồn tại' });
-      }
-      res.json(voucher);
-    })
-    .catch(error => res.status(500).json({ message: error.message }));
+app.get('/vouchers/:id', async (req, res) => {
+  try {
+    const voucher = await Voucher.findById(req.params.id);
+    if (!voucher) {
+      return res.status(404).json({ message: 'Voucher không tồn tại' });
+    }
+    res.json(voucher);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi lấy voucher theo ID", error });
+  }
 });
+
 
 // API thêm Voucher
 app.post("/vouchers/add", async (req, res) => {
   try {
-    // Lấy dữ liệu từ body của request
-    const { price_reduced, discount_code, quantity_voucher } = req.body;
+    const { price_reduced, discount_code, type_voucher, quantity_voucher } = req.body;
 
     // Kiểm tra nếu các trường bắt buộc không được cung cấp
-    if (!price_reduced || !discount_code || !quantity_voucher) {
+    if (!price_reduced || !discount_code || !type_voucher || !quantity_voucher) {
       return res.status(400).json({ message: "Vui lòng cung cấp đầy đủ thông tin." });
     }
 
@@ -846,40 +847,36 @@ app.post("/vouchers/add", async (req, res) => {
     const newVoucher = new Voucher({
       price_reduced,
       discount_code,
-      quantity_voucher
+      type_voucher,
+      quantity_voucher,
     });
 
-    // Lưu vào database
     const savedVoucher = await newVoucher.save();
-
-    // Phản hồi thành công
     res.status(201).json({
       message: "Voucher đã được thêm thành công",
-      voucher: savedVoucher
+      voucher: savedVoucher,
     });
   } catch (error) {
-    // Bắt lỗi và phản hồi
-    if (error instanceof Error && 'code' in error) {
-      if (error.code === 11000) {
-        res.status(400).json({ message: "Mã giảm giá đã tồn tại." });
-        return;
-      }
+    if (error === 11000) {
+      res.status(400).json({ message: "Mã giảm giá đã tồn tại." });
+    } else {
+      res.status(500).json({ message: "Lỗi khi thêm voucher", error });
     }
   }
 });
 
 
 
+
 //API sửa Voucher
 app.put("/vouchers/:id", async (req, res) => {
-  const { price_reduced, discount_code, quantity_voucher } = req.body;
+  const { price_reduced, discount_code, type_voucher, quantity_voucher } = req.body;
 
   try {
-    // Cập nhật voucher theo ID
     const updatedVoucher = await Voucher.findByIdAndUpdate(
-      req.params.id,  // Đảm bảo sử dụng req.params.id thay vì req.params._id
-      { price_reduced, discount_code, quantity_voucher },
-      { new: true } // Trả về bản ghi đã được cập nhật
+      req.params.id,
+      { price_reduced, discount_code, type_voucher, quantity_voucher },
+      { new: true }
     );
 
     if (updatedVoucher) {
@@ -892,10 +889,10 @@ app.put("/vouchers/:id", async (req, res) => {
   }
 });
 
+
 // API xóa Voucher
 app.delete("/vouchers/:id", async (req, res) => {
   try {
-    // Xóa voucher theo ID
     const deletedVoucher = await Voucher.findByIdAndDelete(req.params.id);
     if (deletedVoucher) {
       res.status(200).json({ message: "Voucher đã được xóa" });
@@ -906,6 +903,7 @@ app.delete("/vouchers/:id", async (req, res) => {
     res.status(500).json({ message: "Lỗi khi xóa voucher", error });
   }
 });
+
 
 /////////
 /////--------///
