@@ -17,6 +17,8 @@ import ArtStoryModel from "./ArtStoryModel";
 import OrderModel from "./OrderModel";
 import transaction from "./transaction";
 import moment from "moment";
+import Refund from './RefunModel'; // Đường dẫn tới file định nghĩa schema Refund
+
 // import FeebackAppModel from './FeebackAppModel';
 
 const querystring = require("qs");
@@ -396,6 +398,41 @@ app.put("/orders/:id", async (req, res) => {
   }
 });
 
+// Quản lý hoàn hàng
+
+// Lấy tất cả dữ liệu
+app.get("/refunds", async (req, res) => {
+  try {
+    console.log("Bắt đầu truy vấn Refund...");
+
+    // Truy vấn Refund và lấy tất cả các trường trong bảng Refund, bao gồm orderId
+    const refunds = await Refund.find(); // Không giới hạn trường nào, lấy tất cả
+
+    console.log("Kết quả trả về:", refunds);
+    res.json(refunds);
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách yêu cầu hoàn:", error);
+    res.status(500).json({ message: "Lỗi server, không thể lấy danh sách yêu cầu hoàn" });
+  }
+});
+
+// Cập nhật dữ liệu theo ID
+app.put("/refunds/:id", async (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+
+  try {
+    const updatedRefund = await Refund.findByIdAndUpdate(id, updateData, { new: true });
+    if (!updatedRefund) {
+      return res.status(404).json({ message: "Không tìm thấy yêu cầu hoàn với ID này" });
+    }
+
+    res.json(updatedRefund);
+  } catch (error) {
+    console.error("Lỗi khi cập nhật yêu cầu hoàn:", error);
+    res.status(500).json({ message: "Lỗi server, không thể cập nhật yêu cầu hoàn" });
+  }
+});
 
 
 //Thống kê doanh thu
