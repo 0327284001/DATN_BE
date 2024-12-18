@@ -16,9 +16,11 @@ import FeebackAppModel from "./FeebackAppModel";
 import ArtStoryModel from "./ArtStoryModel";
 import OrderModel from "./OrderModel";
 import transaction from "./transaction";
+import moment from "moment";
 // import FeebackAppModel from './FeebackAppModel';
 
-
+const querystring = require("qs");
+const crypto = require("crypto");
 // import Statistic from "./Statistic";
 var cors = require("cors");
 const fs = require("fs");
@@ -486,57 +488,57 @@ function sortObject(obj: any) {
 }
 
 // Thanh toán
-// app.post("/create-checkout-vnpay", async (req: any, res: any) => {
-//   try {
-//     const secretKey = "AKQGTMHAUVVJONTQYGIBVQFFDRIHLWRX";
-//     let vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-//     const ip =
-//       req.headers["x-forwarded-for"] ||
-//       req.connection.remoteAddress ||
-//       req.socket.remoteAddress ||
-//       req.connection.socket.remoteAddress;
+app.post("/create-checkout-vnpay", async (req: any, res: any) => {
+  try {
+    const secretKey = "AKQGTMHAUVVJONTQYGIBVQFFDRIHLWRX";
+    let vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+    const ip =
+      req.headers["x-forwarded-for"] ||
+      req.connection.remoteAddress ||
+      req.socket.remoteAddress ||
+      req.connection.socket.remoteAddress;
 
-//     const amount = req.body.total;
-//     const returnUrlLocal = req.query.returnUrlLocal;
+    const amount = req.body.total;
+    const returnUrlLocal = req.query.returnUrlLocal;
 
-//     let vnp_Params = {} as any;
-//     vnp_Params["vnp_Version"] = "2.1.0";
-//     vnp_Params["vnp_Command"] = "pay";
-//     vnp_Params["vnp_TmnCode"] = "0NAC2BZW";
-//     vnp_Params["vnp_Amount"] = amount * 100;
-//     vnp_Params["vnp_BankCode"] = "NCB";
-//     vnp_Params["vnp_CreateDate"] = moment(new Date()).format("YYYYMMDDHHmmss");
-//     vnp_Params["vnp_CurrCode"] = "VND";
-//     vnp_Params["vnp_IpAddr"] = ip;
-//     vnp_Params["vnp_Locale"] = "vn";
-//     vnp_Params["vnp_OrderInfo"] = "Thanh_toan_don_hang";
-//     // vnp_Params[
-//     //   "vnp_ReturnUrl"
-//     // ] = `https://fe-healthy-food-store.vercel.app/payment-result?userId=${
-//     //   req.body.user
-//     // }&expire=${moment(new Date()).add(15, "minute").toDate().getTime()}`;
-//     vnp_Params["vnp_ReturnUrl"] = `${req.body.returnUrl}?userId=${
-//       req.body.user
-//     }&expire=${moment(new Date()).add(15, "minute").toDate().getTime()}`;
-//     vnp_Params["vnp_TxnRef"] = moment(new Date()).format("DDHHmmss");
+    let vnp_Params = {} as any;
+    vnp_Params["vnp_Version"] = "2.1.0";
+    vnp_Params["vnp_Command"] = "pay";
+    vnp_Params["vnp_TmnCode"] = "0NAC2BZW";
+    vnp_Params["vnp_Amount"] = amount * 100;
+    vnp_Params["vnp_BankCode"] = "NCB";
+    vnp_Params["vnp_CreateDate"] = moment(new Date()).format("YYYYMMDDHHmmss");
+    vnp_Params["vnp_CurrCode"] = "VND";
+    vnp_Params["vnp_IpAddr"] = ip;
+    vnp_Params["vnp_Locale"] = "vn";
+    vnp_Params["vnp_OrderInfo"] = "Thanh_toan_don_hang";
+    // vnp_Params[
+    //   "vnp_ReturnUrl"
+    // ] = `https://fe-healthy-food-store.vercel.app/payment-result?userId=${
+    //   req.body.user
+    // }&expire=${moment(new Date()).add(15, "minute").toDate().getTime()}`;
+    vnp_Params["vnp_ReturnUrl"] = `${req.body.returnUrl}?userId=${
+      req.body.user
+    }&expire=${moment(new Date()).add(15, "minute").toDate().getTime()}`;
+    vnp_Params["vnp_TxnRef"] = moment(new Date()).format("DDHHmmss");
 
-//     vnp_Params["vnp_OrderType"] = "other";
+    vnp_Params["vnp_OrderType"] = "other";
 
-//     vnp_Params = sortObject(vnp_Params);
-//     const signData = querystring.stringify(vnp_Params, { encode: false });
-//     const hmac = crypto.createHmac("sha512", secretKey);
-//     const signed = hmac.update(signData).digest("hex");
-//     vnp_Params["vnp_SecureHash"] = signed;
-//     vnpUrl += "?" + querystring.stringify(vnp_Params, { encode: false });
-//     await transaction.create({
-//       amount: amount,
-//       date: new Date(),
-//     });
-//     res.send({ url: vnpUrl });
-//   } catch (error) {
-//     return res.status(500, { message: "Error server" });
-//   }
-// });
+    vnp_Params = sortObject(vnp_Params);
+    const signData = querystring.stringify(vnp_Params, { encode: false });
+    const hmac = crypto.createHmac("sha512", secretKey);
+    const signed = hmac.update(signData).digest("hex");
+    vnp_Params["vnp_SecureHash"] = signed;
+    vnpUrl += "?" + querystring.stringify(vnp_Params, { encode: false });
+    await transaction.create({
+      amount: amount,
+      date: new Date(),
+    });
+    res.send({ url: vnpUrl });
+  } catch (error) {
+    return res.status(500, { message: "Error server" });
+  }
+});
 // Lấy thông tin sản phẩm
 
 app.get("/transactions", async (req, res) => {
