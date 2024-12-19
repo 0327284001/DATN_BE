@@ -4,7 +4,7 @@ const refundSchema = new mongoose.Schema({
   orderId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    ref: "order", // Tham chiếu đến bảng Order
+    ref: "Order", // Tham chiếu đến bảng Order
   },
   cusId: {
     type: String,

@@ -401,12 +401,29 @@ app.put("/orders/:id", async (req, res) => {
 // Quản lý hoàn hàng
 
 // Lấy tất cả dữ liệu
+// app.get("/refunds", async (req, res) => {
+//   try {
+//     console.log("Bắt đầu truy vấn Refund...");
+
+//     // Truy vấn Refund và lấy tất cả các trường trong bảng Refund, bao gồm orderId
+//     const refunds = await Refund.find(); // Không giới hạn trường nào, lấy tất cả
+
+//     console.log("Kết quả trả về:", refunds);
+//     res.json(refunds);
+//   } catch (error) {
+//     console.error("Lỗi khi lấy danh sách yêu cầu hoàn:", error);
+//     res.status(500).json({ message: "Lỗi server, không thể lấy danh sách yêu cầu hoàn" });
+//   }
+// });
 app.get("/refunds", async (req, res) => {
   try {
     console.log("Bắt đầu truy vấn Refund...");
 
-    // Truy vấn Refund và lấy tất cả các trường trong bảng Refund, bao gồm orderId
-    const refunds = await Refund.find(); // Không giới hạn trường nào, lấy tất cả
+    // Sử dụng `populate` để lấy thông tin từ bảng Order
+    const refunds = await Refund.find().populate({
+      path: "orderId",
+      select: "name_order", // Lấy tên khách hàng từ bảng Order
+    });
 
     console.log("Kết quả trả về:", refunds);
     res.json(refunds);
@@ -416,23 +433,68 @@ app.get("/refunds", async (req, res) => {
   }
 });
 
+
+
 // Cập nhật dữ liệu theo ID
 app.put("/refunds/:id", async (req, res) => {
   const { id } = req.params;
-  const updateData = req.body;
+  const { refundStatus } = req.body; // Lấy trạng thái refund từ request body
 
   try {
-    const updatedRefund = await Refund.findByIdAndUpdate(id, updateData, { new: true });
-    if (!updatedRefund) {
+    // Tìm refund theo ID
+    const refund = await Refund.findById(id);
+    if (!refund) {
       return res.status(404).json({ message: "Không tìm thấy yêu cầu hoàn với ID này" });
     }
 
-    res.json(updatedRefund);
+    // Cập nhật trạng thái refund
+    refund.refundStatus = refundStatus;
+    await refund.save();
+
+    // Lấy orderId từ refund và tìm đơn hàng tương ứng
+    const orderId = refund.orderId._id;
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng với ID này" });
+    }
+
+    // Cập nhật content trong order khi trạng thái refund là "Đã xác nhận" hoặc "Đã nhận hàng hoàn"
+    if (refundStatus === "Đã xác nhận" || refundStatus === "Đã nhận hàng hoàn") {
+      order.content = "Hoàn hàng";
+    } else {
+      order.content = ""; // Trường hợp khác thì để rỗng
+    }
+
+    await order.save();
+
+    res.json({ message: "Cập nhật trạng thái hoàn hàng và đơn hàng thành công", refund, order });
   } catch (error) {
     console.error("Lỗi khi cập nhật yêu cầu hoàn:", error);
     res.status(500).json({ message: "Lỗi server, không thể cập nhật yêu cầu hoàn" });
   }
 });
+
+
+app.get("/orders/:orderId", async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId).populate({
+      path: "prodDetails.prodId", // Lấy chi tiết sản phẩm (tên, giá, v.v.)
+      select: "namePro", // Chỉ lấy tên sản phẩm
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    }
+
+    // Trả về cả _id của orderId
+    res.json(order); // Trả về chi tiết đầy đủ của đơn hàng
+  } catch (error) {
+    console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
+    res.status(500).json({ message: "Lỗi server", error: error });
+  }
+});
+
+
 
 
 //Thống kê doanh thu
