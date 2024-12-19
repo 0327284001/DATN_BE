@@ -310,6 +310,22 @@ app.put("/update/:id", async (req: Request, res: Response) => {
     res.status(500).json({ message: "Lỗi khi cập nhật sản phẩm" });
   }
 });
+// app.put("/update/:id", async (req: Request, res: Response) => {
+//   try {
+//     const { id } = req.params;
+
+//     // Kiểm tra và chuyển đổi dữ liệu imgPro
+//     if (req.body.imgPro && Array.isArray(req.body.imgPro)) {
+//       req.body.imgPro = req.body.imgPro.map((image: { url: string }) => image.url); // Chỉ định kiểu dữ liệu cho image
+//     }
+
+//     const updateProduct = await Product.findByIdAndUpdate(id, req.body, { new: true });
+//     res.json(updateProduct);
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ message: "Lỗi khi cập nhật sản phẩm" });
+//   }
+// });
 
 
 // Xóa người dùng
