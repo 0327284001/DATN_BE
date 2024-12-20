@@ -512,7 +512,7 @@ app.get("/refunds", async (req, res) => {
 // Cập nhật dữ liệu theo ID
 app.put("/refunds/:id", async (req, res) => {
   const { id } = req.params;
-  const { refundStatus } = req.body; // Lấy trạng thái refund từ request body
+  const { refundStatus } = req.body;
 
   try {
     // Tìm refund theo ID
@@ -526,27 +526,29 @@ app.put("/refunds/:id", async (req, res) => {
     await refund.save();
 
     // Lấy orderId từ refund và tìm đơn hàng tương ứng
-    const orderId = refund.orderId._id;
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(refund.orderId._id);
     if (!order) {
       return res.status(404).json({ message: "Không tìm thấy đơn hàng với ID này" });
     }
 
-    // Cập nhật content trong order khi trạng thái refund là "Đã xác nhận" hoặc "Đã nhận hàng hoàn"
+    // Cập nhật trạng thái order dựa trên refundStatus
     if (refundStatus === "Đã xác nhận" || refundStatus === "Đã nhận hàng hoàn") {
-      order.content = "Hoàn hàng";
-    } else {
-      order.content = ""; // Trường hợp khác thì để rỗng
+      order.orderStatus = "Hoàn hàng";
     }
 
     await order.save();
 
-    res.json({ message: "Cập nhật trạng thái hoàn hàng và đơn hàng thành công", refund, order });
+    res.json({
+      message: "Cập nhật trạng thái hoàn hàng và đơn hàng thành công",
+      refund,
+      order,
+    });
   } catch (error) {
     console.error("Lỗi khi cập nhật yêu cầu hoàn:", error);
     res.status(500).json({ message: "Lỗi server, không thể cập nhật yêu cầu hoàn" });
   }
 });
+
 
 
 app.get("/orders/:orderId", async (req, res) => {
