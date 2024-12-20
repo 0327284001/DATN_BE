@@ -15,6 +15,7 @@ export interface IProduct extends Document {
   quantitySold?: number;
   soldDate?: Date;
   import_price: number;
+  isHidden: boolean; // Thêm trường này vào interface
 }
 
 const ProductSchema = new mongoose.Schema({
@@ -32,7 +33,7 @@ const ProductSchema = new mongoose.Schema({
   quantitySold: { type: Number, default: 0 },
   soldDate: { type: Date }, 
   import_price:{ type: Number, required: true },
+  isHidden: { type: Boolean, default: false }, // Thêm trường này vào schema
 });
-
 
 export default mongoose.model<IProduct>("Product", ProductSchema);

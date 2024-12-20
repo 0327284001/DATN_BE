@@ -18,6 +18,7 @@ import OrderModel from "./OrderModel";
 import transaction from "./transaction";
 import moment from "moment";
 import Refund from './RefunModel'; // Đường dẫn tới file định nghĩa schema Refund
+import HideProduct from "./HideProduct";
 
 // import FeebackAppModel from './FeebackAppModel';
 
@@ -284,6 +285,63 @@ app.post(
     }
   }
 );
+
+// API ẩn sản phẩm
+app.put('/product/hide/:id', async (req, res) => {
+  const productId = req.params.id;
+  try {
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
+    }
+
+    product.isHidden = req.body.isHidden; // Cập nhật giá trị isHidden từ request body
+    await product.save();
+    res.status(200).json(product);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Lỗi khi ẩn sản phẩm', error });
+  }
+});
+
+
+// API hiện sản phẩm
+app.put("/product/show/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const visibleProduct = await HideProduct.findByIdAndUpdate(
+      id,
+      { statusPro: true },
+      { new: true }
+    );
+    if (!visibleProduct) {
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+    }
+    res.json({ message: "Sản phẩm đã được hiển thị", product: visibleProduct });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi khi hiển sản phẩm" });
+  }
+});
+
+
+// API lấy danh sách sản phẩm đã ẩn
+app.get("/product/hideproducts", async (req: Request, res: Response) => {
+  try {
+    const hiddenProducts = await HideProduct.find({ isHide: true }); // Lấy sản phẩm đã bị ẩn
+    res.json(hiddenProducts);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Lỗi khi lấy sản phẩm đã ẩn:", error);
+      res.status(500).json({ message: "Lỗi khi lấy sản phẩm đã ẩn", error: error.message });
+    } else {
+      console.error("Lỗi không xác định:", error);
+      res.status(500).json({ message: "Lỗi không xác định", error: "Unknown error" });
+    }
+  }
+});
+
+
 
 // Cập nhật thông tin người dùng
 app.put("/user/:id", async (req: Request, res: Response) => {
