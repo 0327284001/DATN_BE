@@ -592,11 +592,11 @@ app.get("/analytics", async (req, res) => {
       orderStatus: "Đã giao",
       ...(startDate &&
         endDate && {
-          orderDate: {
-            $gte: new Date(startDate as any),
-            $lte: new Date(endDate as any),
-          },
-        }),
+        orderDate: {
+          $gte: new Date(startDate as any),
+          $lte: new Date(endDate as any),
+        },
+      }),
     };
 
     const orders = await OrderModel.find(filter);
@@ -702,9 +702,8 @@ app.post("/create-checkout-vnpay", async (req: any, res: any) => {
     // ] = `https://fe-healthy-food-store.vercel.app/payment-result?userId=${
     //   req.body.user
     // }&expire=${moment(new Date()).add(15, "minute").toDate().getTime()}`;
-    vnp_Params["vnp_ReturnUrl"] = `${req.body.returnUrl}?userId=${
-      req.body.user
-    }&expire=${moment(new Date()).add(15, "minute").toDate().getTime()}`;
+    vnp_Params["vnp_ReturnUrl"] = `${req.body.returnUrl}?userId=${req.body.user
+      }&expire=${moment(new Date()).add(15, "minute").toDate().getTime()}`;
     vnp_Params["vnp_TxnRef"] = moment(new Date()).format("DDHHmmss");
 
     vnp_Params["vnp_OrderType"] = "other";
@@ -1100,31 +1099,41 @@ app.get("/feedbacks", async (req, res) => {
   try {
     // Lấy dữ liệu feedback từ cơ sở dữ liệu
     console.log("Fetching feedbacks...");
-    const feedbacks = await FeebackModel.find().populate("prodId", "name price");
-    console.log("Feedbacks fetched:", feedbacks);
+    const feedbacks = await FeebackModel.find().populate("prodId");
 
+    // Kiểm tra nếu không có feedback
+    if (!feedbacks || feedbacks.length === 0) {
+      return res.status(404).json({
+        message: "Không có dữ liệu feedback",
+      });
+    }
+
+    console.log("Feedbacks fetched:", feedbacks);
 
     // Chuẩn hóa dữ liệu trả về
     const normalizedFeedbacks = feedbacks.map(feedback => ({
-      id: feedback._id,
+      id: feedback._id.toString(), // Chuyển ObjectId thành chuỗi
       cusId: feedback.cusId,
-      prodId: feedback.prodId,
-      stars: feedback.start,
-      content: feedback.content,
-      dateFeed: feedback.dateFeed,
+      prodId: feedback.prodId._id.toString(), // Sử dụng ID của sản phẩm nếu bạn muốn trả về ID thay vì đối tượng sản phẩm
+
+      start: feedback.
+        start, // Đảm bảo dùng đúng trường 'stars'
+      dateFeed: feedback.dateFeed.toISOString(), // Đảm bảo định dạng ngày hợp lý
     }));
 
     // Trả về phản hồi
     res.status(200).json(normalizedFeedbacks);
   } catch (error) {
     console.error("Error fetching feedbacks:", error); // Ghi lỗi vào console để debug
+
+    // Sửa lỗi TypeScript liên quan đến kiểu 'error'
     res.status(500).json({
       message: "Lỗi khi lấy dữ liệu feedback",
-      error: error // Bao gồm chi tiết lỗi 
+      error: (error instanceof Error ? error.message : error), // Sử dụng cách ép kiểu đúng hơn
     });
   }
-
 });
+
 
 /////////////////
 // API để xóa phản hồi theo id
@@ -1216,7 +1225,7 @@ app.get(
   asyncHandler(async (req: Request, res: Response) => {
     try {
       const artStories = await ArtStoryModel.find();
-      res.status(200).json(artStories); 
+      res.status(200).json(artStories);
     } catch (error) {
       res.status(500).json({ message: "Lỗi server", error });
     }
@@ -1251,7 +1260,7 @@ app.get(
 //thêm tin tức
 // Khi nhận được yêu cầu từ frontend, lưu thông tin bài viết với URL ảnh vào MongoDB
 app.post('/artstories', async (req, res) => {
-  console.log(req.body); 
+  console.log(req.body);
   const { title, author, date, description, content, caption, imageUrl } = req.body;
   const newArtStory = new ArtStoryModel({
     title,
@@ -1277,7 +1286,7 @@ app.put(
   "/artstories/:id",
   asyncHandler(async (req: Request, res: Response) => {
     try {
-      const { id } = req.params; 
+      const { id } = req.params;
       const { title, author, description, content, caption, imageUrl } = req.body;
 
       if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -1294,15 +1303,15 @@ app.put(
           caption,
           imageUrl,
         },
-        { new: true } 
+        { new: true }
       );
 
-      
+
       if (!updatedArtStory) {
         return res.status(404).json({ message: "Không tìm thấy tin tức" });
       }
 
-     
+
       res.status(200).json({
         message: "Cập nhật tin tức thành công",
         artStory: updatedArtStory,
@@ -1317,22 +1326,22 @@ app.delete(
   "/artstories/:id",
   asyncHandler(async (req: Request, res: Response) => {
     try {
-      const { id } = req.params; 
+      const { id } = req.params;
 
-      
+
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ message: "ID không hợp lệ" });
       }
 
-     
+
       const deletedArtStory = await ArtStoryModel.findByIdAndDelete(id);
 
-      
+
       if (!deletedArtStory) {
         return res.status(404).json({ message: "Không tìm thấy tin tức để xóa" });
       }
 
-     
+
       res.status(200).json({
         message: "Xóa tin tức thành công",
         artStory: deletedArtStory,
