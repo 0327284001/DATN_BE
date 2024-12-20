@@ -288,58 +288,68 @@ app.post(
 
 // API ẩn sản phẩm
 app.put('/product/hide/:id', async (req, res) => {
-  const productId = req.params.id;
+  const { id } = req.params;
+  const { isHidden } = req.body;
+
+  // Kiểm tra xem isHidden có phải là boolean không
+  if (typeof isHidden !== 'boolean') {
+    return res.status(400).json({ message: "isHidden phải là boolean." });
+  }
+
   try {
-    const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
+    // Tìm và cập nhật sản phẩm
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id,
+      { isHidden },
+      { new: true }
+    );
+
+    // Kiểm tra nếu không tìm thấy sản phẩm
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm với ID này." });
     }
 
-    product.isHidden = req.body.isHidden; // Cập nhật giá trị isHidden từ request body
-    await product.save();
-    res.status(200).json(product);
+    // Trả về sản phẩm đã được cập nhật
+    res.status(200).json({
+      message: "Sản phẩm đã được ẩn thành công.",
+      product: updatedProduct,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Lỗi khi ẩn sản phẩm', error });
+    res.status(500).json({ message: "Lỗi khi cập nhật sản phẩm." });
   }
 });
+
 
 
 // API hiện sản phẩm
-app.put("/product/show/:id", async (req: Request, res: Response) => {
+app.put("/hideproducts/show/:id", async (req, res) => {
+  const { id } = req.params;
   try {
-    const { id } = req.params;
-    const visibleProduct = await HideProduct.findByIdAndUpdate(
-      id,
-      { statusPro: true },
-      { new: true }
-    );
-    if (!visibleProduct) {
+    const product = await Product.findByIdAndUpdate(id, { statusPro: true }, { new: true });
+    if (!product) {
       return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
     }
-    res.json({ message: "Sản phẩm đã được hiển thị", product: visibleProduct });
+    res.json({ message: "Sản phẩm đã được hiển thị", product });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Lỗi khi hiển sản phẩm" });
+    res.status(500).json({ message: "Lỗi khi cập nhật sản phẩm" });
   }
 });
 
 
-// API lấy danh sách sản phẩm đã ẩn
-app.get("/product/hideproducts", async (req: Request, res: Response) => {
+//Api lấy tất cả dữ liệu ẩn
+app.get('/hideproducts', async (req, res) => {
   try {
-    const hiddenProducts = await HideProduct.find({ isHide: true }); // Lấy sản phẩm đã bị ẩn
+    // Giả sử bạn đang sử dụng trường 'isHidden' để xác định sản phẩm bị ẩn
+    const hiddenProducts = await Product.find({ isHidden: true }); // Lọc các sản phẩm bị ẩn
     res.json(hiddenProducts);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error("Lỗi khi lấy sản phẩm đã ẩn:", error);
-      res.status(500).json({ message: "Lỗi khi lấy sản phẩm đã ẩn", error: error.message });
-    } else {
-      console.error("Lỗi không xác định:", error);
-      res.status(500).json({ message: "Lỗi không xác định", error: "Unknown error" });
-    }
+  } catch (error) {
+    console.error('Error fetching hidden products:', error);
+    res.status(500).send('Lỗi server khi lấy sản phẩm ẩn');
   }
 });
+
+
 
 
 

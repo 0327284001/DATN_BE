@@ -9,18 +9,20 @@ export interface IHideProduct extends Document {
   cateId: mongoose.Types.ObjectId; // Danh mục sản phẩm
   imgPro: string[]; // Hình ảnh của sản phẩm
   isHide: boolean; // Trạng thái ẩn (true = ẩn, false = hiển thị)
+  createdAt: Date; // Thời gian tạo
+  updatedAt: Date; // Thời gian cập nhật
 }
 
 // Định nghĩa Schema cho sản phẩm
 const HideProductSchema = new mongoose.Schema<IHideProduct>({
   namePro: { type: String, required: true }, // Tên sản phẩm
-  statusPro: { type: Boolean, required: true, default: true }, // Trạng thái còn hàng (true = còn hàng, false = hết hàng)
+  statusPro: { type: Boolean, required: true, default: true }, // Trạng thái còn hàng
   price: { type: Number, required: true }, // Giá sản phẩm
   quantity: { type: Number, required: true }, // Số lượng sản phẩm
   cateId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true }, // Danh mục sản phẩm
   imgPro: { type: [String], required: true }, // Hình ảnh của sản phẩm
-  isHide: { type: Boolean, required: true, default: false }, // Trạng thái ẩn (true = ẩn, false = hiển thị)
-});
+  isHide: { type: Boolean, required: true, default: false }, // Trạng thái ẩn
+}, { timestamps: true }); // Tự động tạo createdAt và updatedAt
 
 // Export model từ schema
 export default mongoose.model<IHideProduct>("HideProduct", HideProductSchema);
